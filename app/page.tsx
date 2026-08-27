@@ -1,89 +1,198 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Zap, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  FileCheck2, Sparkles, Trash2, Cpu,
+} from 'lucide-react';
 import Uploader from './components/Uploader';
 import Dashboard, { StudentResult } from './components/Dashboard';
 
-const KEY = 'answer-eval-results';
+const STORAGE_KEY = 'ib-answer-sheet-results';
 
 export default function Home() {
   const [results, setResults] = useState<StudentResult[]>([]);
-  const [processing, setProcessing] = useState(false);
-  const dashRef = useRef<HTMLDivElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    try { const s = localStorage.getItem(KEY); if (s) setResults(JSON.parse(s)); } catch { /* */ }
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) setResults(JSON.parse(s));
+    } catch {
+      // ignore
+    }
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(results)); } catch { /* */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(results));
+    } catch {
+      // ignore
+    }
   }, [results]);
 
-  const onDone = useCallback((r: Record<string, unknown>[]) => {
+  const handleProcessComplete = useCallback((newResults: Record<string, unknown>[]) => {
     setResults((prev) => {
       const next = [...prev];
-      for (const item of r) {
+      for (const item of newResults) {
         const t = item as unknown as StudentResult;
         const idx = next.findIndex((e) => e.studentId === t.studentId);
-        if (idx >= 0) next[idx] = t; else next.push(t);
+        if (idx >= 0) next[idx] = t;
+        else next.push(t);
       }
       return next;
     });
-    setTimeout(() => dashRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
+  }, []);
+
+  const handleClearAll = useCallback(() => {
+    setResults([]);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return (
-    <main style={{ position: 'relative', width: '100%', maxWidth: '100%', padding: '32px 40px 60px' }}>
-      {/* Header row */}
-      <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 12px', background: 'var(--accent-dim)',
-            border: '1px solid rgba(129,140,248,0.15)',
-            borderRadius: 999, fontSize: 11, fontWeight: 600, color: 'var(--accent)',
-            marginBottom: 10,
-          }}>
-            <Zap size={12} /> PaddleOCR + Gemini
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+      {/* ── Top Navigation Header (100% Width) ── */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 24px',
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--bg-subtle)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 28,
+              height: 28,
+              borderRadius: 6,
+              background: 'var(--accent)',
+              color: '#fff',
+            }}
+          >
+            <FileCheck2 size={16} />
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>
-            Answer Sheet Evaluator
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>
-            Upload student PDFs for automated OCR extraction and IB-standard scoring.
-          </p>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
+              AI Answer Sheet Evaluation Suite
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+              Automated OCR Ingestion & IB Standards Scoring
+            </div>
+          </div>
+        </div>
+
+        {/* Engine Tags & Quick Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '3px 8px',
+              borderRadius: 6,
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              fontSize: 11,
+              color: 'var(--text-2)',
+            }}
+          >
+            <Cpu size={12} color="var(--accent-light)" />
+            <span>PaddleOCR-VL + OpenRouter (Llama 3.3 70B)</span>
+          </div>
+
+          {results.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ padding: '3px 8px', fontSize: 11 }}
+              onClick={handleClearAll}
+              title="Clear all student records"
+            >
+              <Trash2 size={12} /> Clear Data
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Two-column layout: Upload left, results right — stacks on mobile */}
-      <div style={{ display: 'grid', gridTemplateColumns: results.length > 0 ? '360px 1fr' : '1fr', gap: 32, alignItems: 'start' }}>
-        {/* Uploader */}
-        <section style={{ maxWidth: results.length > 0 ? undefined : 560, justifySelf: results.length > 0 ? undefined : 'center' }}>
-          <Uploader onProcessComplete={onDone} isProcessing={processing} setIsProcessing={setProcessing} />
+      {/* ── Main Full-Screen Body Grid ── */}
+      <main
+        style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: 'minmax(340px, 380px) 1fr',
+          gap: 16,
+          padding: '16px 20px',
+          maxWidth: '100vw',
+          width: '100%',
+        }}
+      >
+        {/* Left Side: Upload & Queue Ingestion Panel */}
+        <section
+          className="panel"
+          style={{
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            height: 'fit-content',
+            minHeight: 'calc(100vh - 90px)',
+          }}
+        >
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+              Document Ingestion
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+              Upload handwritten or printed answer scripts
+            </div>
+          </div>
+
+          <Uploader
+            onProcessComplete={handleProcessComplete}
+            isProcessing={isProcessing}
+            setIsProcessing={setIsProcessing}
+          />
         </section>
 
-        {/* Dashboard */}
-        {results.length > 0 && (
-          <section ref={dashRef} style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-              <button className="btn btn-ghost" onClick={() => { setResults([]); localStorage.removeItem(KEY); }} style={{ fontSize: 12 }}>
-                <Trash2 size={13} /> Clear all
-              </button>
-            </div>
-            <Dashboard results={results} onUpdateResults={setResults} />
-          </section>
-        )}
-      </div>
+        {/* Right Side: Evaluation Matrix, Analytics & Inspector */}
+        <section
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: 0,
+            minHeight: 'calc(100vh - 90px)',
+          }}
+        >
+          <Dashboard
+            results={results}
+            onUpdateResults={setResults}
+          />
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer style={{
-        textAlign: 'center', marginTop: 48, padding: '16px 0',
-        borderTop: '1px solid var(--border)',
-        color: 'var(--text-3)', fontSize: 11,
-      }}>
-        AI-Based Bulk Answer Sheet Evaluation · Demo
+      {/* ── Subtitle Footer ── */}
+      <footer
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 24px',
+          borderTop: '1px solid var(--border)',
+          background: 'var(--bg-subtle)',
+          fontSize: 11,
+          color: 'var(--text-3)',
+        }}
+      >
+        <span>AI-Based Bulk Answer Sheet Evaluation Demo</span>
+        <span>IB Mark Band Scale (0–7) · PaddleOCR-VL-1.6 · Google Gemini</span>
       </footer>
-    </main>
+    </div>
   );
 }
