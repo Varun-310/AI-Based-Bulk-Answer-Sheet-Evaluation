@@ -1,13 +1,15 @@
 # AI-Based Bulk Answer Sheet Evaluation System
-## Technical & Functional Project Documentation
+## Technical & Functional Engineering Specification
 
 ---
 
-## 1. Executive Summary & Problem Statement
+## 1. Executive Summary & Problem Context
 
-The **AI-Based Bulk Answer Sheet Evaluation System** is an end-to-end automated platform engineered to evaluate handwritten and printed student examination sheets at scale. Designed to align with **International Baccalaureate (IB) assessment standards**, the system solves traditional manual grading bottlenecks by streamlining document ingestion, optical character recognition (OCR), question segmentation, structured rubric-based scoring, and live marksheet analytics.
+Evaluating academic examinations in bulk poses chronic logistical and quality challenges for educational organizations. Manual evaluation across hundreds or thousands of handwritten student scripts suffers from grader fatigue, inter-rater inconsistency, prolonged grading turnaround times, and significant administrative overhead. Furthermore, disparate handwriting styles, multi-part questions, and complex formatting render traditional template-bound OMR scanners ineffective for open-ended subjective assessments.
 
-### Key Objectives
+The **AI-Based Bulk Answer Sheet Evaluation System** provides an end-to-end cloud-native solution designed specifically to address these bottlenecks. By integrating multimodal document parsing (**PaddleOCR-VL**) with high-capacity reasoning models, the system autonomously isolates distinct question blocks, evaluates student responses against strict **International Baccalaureate (IB) criteria**, generates granular question-level feedback, and presents an interactive cockpit for teacher moderation and administrative grade export.
+
+### Core Objectives
 * **Bulk Processing**: Ingest multiple student PDFs simultaneously with per-file status tracking.
 * **Specialized OCR**: Extract handwritten notes and printed questions via high-precision layout parsing.
 * **Intelligent Reasoning**: Automatically detect question boundaries ($Q_1, Q_2, \dots, Q_n$), isolate answers, and evaluate responses against IB mark bands ($0\text{--}7$).
@@ -16,7 +18,9 @@ The **AI-Based Bulk Answer Sheet Evaluation System** is an end-to-end automated 
 
 ---
 
-## 2. Architecture & Pipeline Workflow
+## 2. Architectural Pipeline & Data Engineering
+
+To handle heterogeneous multi-page PDFs reliably without incurring cloud serverless gateway timeouts, the platform implements a decoupled, three-phase asynchronous processing pipeline:
 
 ```mermaid
 flowchart TD
@@ -41,88 +45,80 @@ flowchart TD
     H --> J[Excel & CSV Reports]
 ```
 
----
+### Component Technology Stack
 
-## 3. Technology Stack
-
-| Layer | Technology | Purpose |
+| Layer | Technology | Role / Justification |
 |---|---|---|
-| **Frontend Framework** | **Next.js 14 (App Router)** | High-performance React framework with server-side API routes |
-| **Language & Typing** | **TypeScript 5** | Strict type safety for data models and API payloads |
-| **OCR Engine** | **PaddleOCR-VL Engine** | High-accuracy layout parsing and handwritten character extraction |
-| **Reasoning Engine** | **Advanced LLM Reasoning** | Question segmentation, answer critique, and IB score calculation |
-| **Icons & UI Design** | **Lucide Icons + Pure CSS System** | Minimalist, distraction-free full-viewport cockpit layout |
-| **Spreadsheet Generation** | **SheetJS (xlsx)** | Client-side export of formatted grade summaries |
+| **Frontend & API** | **Next.js 14 (App Router)** | Full-stack React framework providing edge routing and responsive cockpit UI. |
+| **Type Safety** | **TypeScript 5** | Rigorous typing for evaluation schemas, student models, and API payloads. |
+| **OCR Parsing** | **PaddleOCR-VL Engine** | Specialized extraction of handwritten answers and printed questions. |
+| **Reasoning LLM** | **High-Capacity Reasoning Engine** | Contextual answer grading, question isolation, and structured JSON output. |
+| **Report Generation** | **SheetJS (xlsx)** | Client-side generation of administrative grade books (.xlsx) and raw CSV exports. |
 
 ---
 
-## 4. Core Features & Functional Specification
+## 3. OCR & Optical Layout Analysis Deep-Dive
 
-### 4.1 Ingestion & Queue Management
-* **Filename as Student ID**: Automatically parses filenames (e.g., `22104567.pdf` $\rightarrow$ `Student ID: 22104567`).
-* **Live Step-by-Step Progress**: Visual indicators transition through:
-  $$\text{Queued} \longrightarrow \text{Uploading} \longrightarrow \text{PaddleOCR-VL} \longrightarrow \text{AI Scoring} \longrightarrow \text{Evaluated}$$
-* **1-Click Test Pack**: Built-in test loader that supplies 3 sample student answer sheets of varying performance tiers (Excellent, Good, Needs Improvement) without manual file hunting.
+Answer sheets vary widely in handwriting legibility, page orientation, margin density, and answer structure. The platform leverages PaddleOCR-VL to solve optical parsing challenges through dedicated algorithmic stages:
 
-### 4.2 OCR & Intelligent Parsing
-* Handles mixed formats (typed headers + handwritten script).
-* Strips extraneous formatting while preserving question hierarchy.
-* Generates a raw text stream stored alongside student records for auditability.
-
-### 4.3 IB Rubric Scoring Engine
-For each identified question, the reasoning engine assigns a score on the standard IB $0\text{--}7$ mark band:
-
-| Score | Performance Level | Descriptor |
-|:---:|:---|:---|
-| **$7$** | **Excellent** | Thorough, accurate, demonstrating mastery and deep conceptual clarity |
-| **$5\text{--}6$** | **Good** | Solid understanding, coherent analysis, minor omissions |
-| **$3\text{--}4$** | **Satisfactory** | Basic comprehension, partial explanation, noticeable gaps |
-| **$1\text{--}2$** | **Needs Improvement** | Limited knowledge, significant inaccuracies, weak conceptual grasp |
-| **$0$** | **No Credit** | Blank, irrelevant, or entirely incorrect response |
-
-### 4.4 Real-time Teacher Moderation & Analytics
-* **Summary KPI Strip**: Displays Total Evaluated, Class Mean Percentage, Pass Rate ($\ge 50\%$), and Distinction Rate ($\ge 85\%$).
-* **Matrix Table**: Dynamic column grid auto-scaling to the number of detected questions ($Q_1, Q_2, Q_3, \dots$).
-* **Inspector Drawer**: Click any student to view:
-  1. Specific question feedback and extracted quote excerpts.
-  2. **Editable Score Box**: Modifying any mark recalculates total score, percentage, and grade band live.
-  3. **PaddleOCR Raw Text Viewer**: Side-by-side verification of OCR text against assigned marks.
+* **Document Layout Detection**: Distinguishes between printed exam prompts, student handwritten answers, mathematical notations, and margin noise.
+* **Handwritten Text Recognition (HTR)**: High-accuracy character transcription resilient to varying cursive styles, pen thicknesses, and slight image skew.
+* **Sequential Content Structuring**: Reconstructs natural reading order across multi-page scripts into a unified markdown transcript stream.
 
 ---
 
-## 5. API Reference
+## 4. International Baccalaureate (IB) Scoring Rubric
 
-### `POST /api/ocr/submit`
-Submits a single PDF file to the PaddleOCR-VL async processing queue.
-* **Request**: `multipart/form-data` with `file: File`
-* **Response**: `{ "jobId": "86518605801172992" }`
+Grading fidelity is maintained by enforcing standardized International Baccalaureate (IB) criterion bands. Each detected question receives an objective mark between $0$ and $7$:
 
-### `GET /api/ocr/poll?jobId={id}`
-Checks processing status of an active OCR job and downloads parsed markdown when complete.
-
-### `POST /api/evaluate`
-Takes extracted OCR text and student metadata, prompts the reasoning model, and returns question-wise marks and critique.
-
-### `GET /api/sample-pdfs`
-Returns pre-generated test PDFs encoded in Base64 for instant demo evaluation.
+| Band | Classification | Assessment Criteria & Competency Descriptor |
+|:---:|:---:|:---|
+| **$7$** | **Excellent** | Comprehensive conceptual mastery. Arguments are nuanced, logically structured, and thoroughly accurate. |
+| **$5\text{--}6$** | **Good** | Sound understanding of key principles. Clear reasoning with minor inaccuracies or slight omissions. |
+| **$3\text{--}4$** | **Satisfactory** | Basic conceptual grasp. Responses are partially developed but exhibit noticeable factual or analytical gaps. |
+| **$1\text{--}2$** | **Needs Improvement** | Very limited comprehension. Superficial treatment, substantial inaccuracies, and weak reasoning. |
+| **$0$** | **No Credit** | Blank submission, completely irrelevant content, or response failing to address the question. |
 
 ---
 
-## 6. Verification & Benchmark Dataset
+## 5. Evaluator Moderation Cockpit & Workflow
 
-The system includes a pre-packaged benchmark dataset representing three distinct student achievement tiers:
+A central design pillar is **Human-in-the-Loop** verification. The evaluation interface is constructed as a high-density, full-viewport dashboard:
 
-| Student ID | Simulated Profile | Expected Classification | Benchmark Score |
+* **Live Dynamic Matrix Grid**: Multi-column table displaying Student IDs, individual question score chips, total marks, percentage, and performance status.
+* **Interactive Score Adjustment**: Teachers can click any question mark input to override scores. Overall totals, percentages, and grade bands recalculate in real time.
+* **Split-Pane Audit Drawer**: Expanding any student row reveals question-by-question qualitative feedback alongside the original PaddleOCR raw text stream.
+* **Cohort Analytics Strip**: Top-level KPIs calculate real-time Class Mean (%), Pass Rate ($\ge 50\%$), and Distinction Rate ($\ge 85\%$) across the current batch.
+* **One-Click Grade Export**: Generates institutional-grade Excel (`.xlsx`) workbooks and CSV files formatted for school information systems (SIS).
+
+---
+
+## 6. API Architecture & Endpoint Contracts
+
+* `POST /api/ocr/submit`: Accepts `multipart/form-data` PDF file; queues asynchronous PaddleOCR-VL task; returns `{ jobId: string }`.
+* `GET /api/ocr/poll?jobId={id}`: Queries job progress; returns `{ state: "running" | "done", ocrText: string, totalPages, extractedPages }`.
+* `POST /api/evaluate`: Receives `{ studentId, ocrText }`; invokes reasoning model with IB prompt schema; returns structured question array, totals, and performance band.
+* `GET /api/sample-pdfs`: Provides pre-compiled benchmark answer sheets in Base64 for instant end-to-end demonstration.
+
+---
+
+## 7. Verification Dataset & Benchmark Results
+
+The system includes a pre-packaged verification dataset consisting of three distinct student performance cohorts covering Biology, Physics, History, and Literature:
+
+| Student ID | Simulated Academic Profile | Expected Classification | Benchmark Output |
 |---|---|---|---|
-| **22104567.pdf** | Detailed, structured academic responses | Distinction / Excellent | 32 / 35 (91%) |
-| **22104589.pdf** | Brief, high-level summary answers | Satisfactory / Passing | 18 / 35 (51%) |
-| **22104601.pdf** | Exemplary mastery across all disciplines | Top Distinction (Grade 7) | 34 / 35 (97%) |
+| **22104567.pdf** | Structured, coherent explanations across all prompts. | Distinction / Excellent | 32 / 35 Marks (91%) |
+| **22104589.pdf** | Brief, superficial answers with key factual gaps. | Satisfactory / Passing | 18 / 35 Marks (51%) |
+| **22104601.pdf** | Exemplary conceptual rigor and nuanced analytical depth. | Top Distinction (Grade 7) | 34 / 35 Marks (97%) |
 
 ---
 
-## 7. Future Roadmap & Enhancements
+## 8. Security, Integrity & Future Evolution
 
-* **Multi-Examiner Moderation**: Add blind-marking workflows with variance thresholds triggering secondary human review.
-* **Custom Rubric Uploads**: Allow teachers to supply custom marking schemes per exam paper.
-* **Visual Annotation Overlay**: Render bounding boxes directly onto student PDF pages highlighting evaluated text.
-* **LMS Integration**: Webhooks and LTI connectors for Canvas, Google Classroom, and Moodle.
+The architecture incorporates data privacy by design: student documents are processed in memory and never permanently stored on external database clusters.
+
+### Future Roadmap
+* **Visual Annotation Overlays**: Rendering coordinate-accurate bounding boxes directly onto student PDF pages highlighting evaluated passages.
+* **Multi-Moderator Blind Grading**: Dual-evaluator scoring workflows with automatic variance flags triggering secondary senior examiner review.
+* **LMS Connectors**: Native LTI integrations allowing direct grade synchronization with Canvas, Blackboard, Google Classroom, and Moodle.
