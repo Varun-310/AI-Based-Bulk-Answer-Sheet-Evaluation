@@ -108,18 +108,40 @@ export default function Uploader({ onProcessComplete, isProcessing, setIsProcess
 
       if (!ocrText) throw new Error('OCR returned no readable text');
 
-      // 3 — evaluate with OpenRouter
+      // 3 — evaluate with OpenRouter (with 1 automatic retry)
       update(entry.id, { status: 'evaluating', progress: 'AI Scoring…' });
-      const er = await fetch('/api/evaluate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ocrText, studentId }),
-      });
-      if (!er.ok) {
-        const err = await er.json().catch(() => ({}));
-        throw new Error(err.error || 'Evaluation failed');
+      
+      let evalData = null;
+      let lastEvalErr = null;
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const er = await fetch('/api/evaluate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ocrText, studentId }),
+          });
+          if (er.ok) {
+            evalData = await er.json();
+            break;
+          } else {
+            const err = await er.json().catch(() => ({}));
+            lastEvalErr = new Error(err.error || `Evaluation HTTP ${er.status}`);
+          }
+        } catch (err) {
+          lastEvalErr = err instanceof Error ? err : new Error('Network error');
+        }
+        if (attempt < 2) {
+          update(entry.id, { progress: 'Retrying Scoring…' });
+          await sleep(1500);
+        }
       }
-      return await er.json();
+
+      if (!evalData) {
+        throw lastEvalErr || new Error('Evaluation failed');
+      }
+
+      return evalData;
     },
     [update],
   );

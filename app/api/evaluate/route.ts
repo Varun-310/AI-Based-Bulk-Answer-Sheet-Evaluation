@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Call OpenRouter API with prioritized top reasoning models
+// Call OpenRouter API with per-model fast timeout & fallbacks
 async function callOpenRouter(prompt: string): Promise<string> {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
 
   if (!openRouterKey) {
-    throw new Error('OPENROUTER_API_KEY is not configured in .env.local');
+    throw new Error('OPENROUTER_API_KEY is not configured in environment variables');
   }
 
-  // Best models for structured rubric scoring & OCR reasoning on OpenRouter
+  // Fast, reliable models on OpenRouter
   const modelsToTry = [
-    process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.3-70b-instruct',
-    'google/gemini-2.0-flash-001',
+    process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001',
+    'meta-llama/llama-3.3-70b-instruct',
     'anthropic/claude-3.5-haiku',
     'mistralai/mistral-small-24b-instruct-2501',
   ];
@@ -20,6 +20,10 @@ async function callOpenRouter(prompt: string): Promise<string> {
 
   for (const modelName of modelsToTry) {
     try {
+      // 10 second timeout per model call to prevent Vercel 504 gateway timeouts
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -33,34 +37,37 @@ async function callOpenRouter(prompt: string): Promise<string> {
           messages: [
             {
               role: 'system',
-              content: 'You are an expert IB (International Baccalaureate) examiner. You evaluate student exam scripts objectively and output strictly structured JSON without markdown or codeblocks.',
+              content: 'You are an expert IB examiner. Evaluate exam responses and return ONLY a valid JSON object with a "questions" array.',
             },
             { role: 'user', content: prompt },
           ],
           temperature: 0.1,
           response_format: { type: 'json_object' },
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!orRes.ok) {
         const errText = await orRes.text();
-        console.warn(`OpenRouter model ${modelName} returned ${orRes.status}:`, errText);
-        lastError = new Error(`OpenRouter ${modelName} error (${orRes.status}): ${errText}`);
+        console.warn(`OpenRouter ${modelName} returned status ${orRes.status}:`, errText);
+        lastError = new Error(`OpenRouter ${modelName} status ${orRes.status}`);
         continue;
       }
 
       const data = await orRes.json();
       const content = data?.choices?.[0]?.message?.content;
-      if (content) {
+      if (content && typeof content === 'string' && content.trim().length > 0) {
         return content;
       }
     } catch (e) {
       lastError = e;
-      console.warn(`OpenRouter model ${modelName} failed, trying next...`, e);
+      console.warn(`OpenRouter model ${modelName} failed or timed out:`, e);
     }
   }
 
-  throw lastError || new Error('All OpenRouter models failed to respond');
+  throw lastError || new Error('All OpenRouter models failed to respond in time');
 }
 
 export async function POST(request: NextRequest) {
@@ -80,32 +87,30 @@ ${ocrText.substring(0, 8000)}
 ---
 
 Your task:
-1. Identify all questions and their corresponding answers in the text. Look for patterns like "Q1", "Question 1", "1.", "1)", "(a)", "(b)", etc.
-2. For each question found, assign an IB-style score on a 0-7 scale:
-   - 0: No relevant content or completely wrong
-   - 1-2: Very limited understanding, major errors
-   - 3-4: Basic understanding, some correct elements but significant gaps
-   - 5-6: Good understanding, minor errors or omissions
-   - 7: Excellent, thorough and accurate response
-3. Return a JSON structure with an array under "questions" (or direct array). Format:
+1. Identify all questions and answers in the text (e.g. "Q1", "Question 1", "1.", "1)", etc.).
+2. For each question found, assign an IB score on a 0-7 scale:
+   - 0: No relevant content
+   - 1-2: Very limited understanding
+   - 3-4: Basic understanding with gaps
+   - 5-6: Good understanding, minor errors
+   - 7: Excellent, thorough and accurate
+3. Return ONLY a JSON object with this exact structure:
 {
   "questions": [
     {
       "id": "Q1",
       "score": 5,
       "maxScore": 7,
-      "feedback": "Brief constructive feedback in 1-2 sentences",
-      "extractedAnswer": "First 120 chars of extracted answer..."
+      "feedback": "Constructive 1-2 sentence feedback.",
+      "extractedAnswer": "First 100 characters of student answer..."
     }
   ]
 }
 
 Rules:
-- If you detect fewer than 2 clear questions, treat the entire content as one answer (Q1)
-- Always return at least 1 question
-- Scores must be integers 0-7
-- Keep feedback professional and constructive
-- extractedAnswer should be the first 120 characters of the student's answer text`;
+- If fewer than 2 clear questions, treat all text as Q1.
+- Always include at least 1 question.
+- Scores must be integers between 0 and 7.`;
 
     const rawResponse = await callOpenRouter(prompt);
 
@@ -150,14 +155,23 @@ Rules:
           score: 5,
           maxScore: 7,
           feedback: 'Evaluated response according to IB assessment rubric.',
-          extractedAnswer: ocrText.substring(0, 120),
+          extractedAnswer: ocrText.substring(0, 100),
         },
       ];
     }
 
+    // Ensure valid numbers
+    questions = questions.map((q, idx) => ({
+      id: q.id || `Q${idx + 1}`,
+      score: Math.max(0, Math.min(7, Number(q.score) || 0)),
+      maxScore: Number(q.maxScore) || 7,
+      feedback: q.feedback || 'Completed evaluation.',
+      extractedAnswer: q.extractedAnswer || ocrText.substring(0, 100),
+    }));
+
     // Calculate totals
-    const totalScore = questions.reduce((s, q) => s + (Number(q.score) || 0), 0);
-    const maxTotal = questions.reduce((s, q) => s + (Number(q.maxScore) || 7), 0);
+    const totalScore = questions.reduce((s, q) => s + q.score, 0);
+    const maxTotal = questions.reduce((s, q) => s + q.maxScore, 0);
     const percentage = maxTotal > 0 ? Math.round((totalScore / maxTotal) * 100) : 0;
 
     let status: string;
