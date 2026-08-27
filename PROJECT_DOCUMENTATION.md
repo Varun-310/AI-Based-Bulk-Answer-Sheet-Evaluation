@@ -1,5 +1,4 @@
-# AI-Based Bulk Answer Sheet Evaluation System
-## Technical & Functional Engineering Specification
+# AI-Based Bulk Answer Sheet Evaluation System Document
 
 ---
 

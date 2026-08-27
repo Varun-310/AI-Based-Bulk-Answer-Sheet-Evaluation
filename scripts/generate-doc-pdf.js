@@ -373,15 +373,15 @@ async function createDocumentationPDF() {
   // Formal Header Banner
   currentPage.drawRectangle({
     x: 0,
-    y: PAGE_HEIGHT - 95,
+    y: PAGE_HEIGHT - 85,
     width: PAGE_WIDTH,
-    height: 95,
+    height: 85,
     color: primaryColor,
   });
 
-  currentPage.drawText('OFFICIAL TECHNICAL REPORT & SYSTEM SPECIFICATION', {
+  currentPage.drawText('OFFICIAL TECHNICAL REPORT', {
     x: MARGIN_LEFT,
-    y: PAGE_HEIGHT - 38,
+    y: PAGE_HEIGHT - 34,
     size: 8.5,
     font: fontBold,
     color: rgb(0.75, 0.85, 1),
@@ -389,21 +389,13 @@ async function createDocumentationPDF() {
 
   currentPage.drawText('AI-Based Bulk Answer Sheet Evaluation System Document', {
     x: MARGIN_LEFT,
-    y: PAGE_HEIGHT - 62,
+    y: PAGE_HEIGHT - 58,
     size: 16,
     font: fontBold,
     color: rgb(1, 1, 1),
   });
 
-  currentPage.drawText('Automated Ingestion, OCR Layout Parsing & IB Criterion-Based Evaluation', {
-    x: MARGIN_LEFT,
-    y: PAGE_HEIGHT - 79,
-    size: 9,
-    font: fontRegular,
-    color: rgb(0.9, 0.93, 1),
-  });
-
-  cursorY = PAGE_HEIGHT - 120;
+  cursorY = PAGE_HEIGHT - 105;
 
   drawCallout('Executive Document Summary', [
     'System: End-to-End Automated Answer Sheet Processing & Evaluation Platform',
