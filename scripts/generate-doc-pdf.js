@@ -5,26 +5,26 @@ const path = require('path');
 async function createDocumentationPDF() {
   const doc = await PDFDocument.create();
   
-  // Embed standard fonts
+  // Standard fonts
   const fontRegular = await doc.embedFont(StandardFonts.Helvetica);
   const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
   const fontOblique = await doc.embedFont(StandardFonts.HelveticaOblique);
 
-  // Corporate Color Palette
-  const primaryColor = rgb(0.11, 0.22, 0.48);   // #1c3879 Deep Navy
-  const secondaryColor = rgb(0.35, 0.4, 0.48);  // Slate Gray
-  const textColor = rgb(0.15, 0.17, 0.2);       // Charcoal #262b33
-  const lightBg = rgb(0.96, 0.97, 0.99);        // Light Ice Tint
-  const tableHeaderBg = rgb(0.14, 0.26, 0.54);  // Header Navy
-  const accentColor = rgb(0.22, 0.45, 0.85);    // Royal Blue Accent
-  const borderColor = rgb(0.82, 0.86, 0.92);
+  // Elegant Executive Color Palette
+  const primaryColor = rgb(0.12, 0.22, 0.45);   // Deep Navy #1e3873
+  const secondaryColor = rgb(0.4, 0.45, 0.52);   // Slate Gray
+  const textColor = rgb(0.2, 0.22, 0.26);       // Soft Charcoal
+  const lightBg = rgb(0.97, 0.98, 0.995);       // Very subtle tint
+  const headerBg = rgb(0.15, 0.26, 0.52);       // Table header
+  const accentColor = rgb(0.25, 0.45, 0.85);    // Royal Blue
+  const borderColor = rgb(0.85, 0.88, 0.92);
 
-  const PAGE_WIDTH = 595.28;  // A4 Width
-  const PAGE_HEIGHT = 841.89; // A4 Height
-  const MARGIN_LEFT = 45;
-  const MARGIN_RIGHT = 45;
-  const MARGIN_TOP = 42;
-  const MARGIN_BOTTOM = 42;
+  const PAGE_WIDTH = 595.28;  // A4
+  const PAGE_HEIGHT = 841.89; // A4
+  const MARGIN_LEFT = 48;
+  const MARGIN_RIGHT = 48;
+  const MARGIN_TOP = 48;
+  const MARGIN_BOTTOM = 48;
   const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
   let currentPage = null;
@@ -42,75 +42,75 @@ async function createDocumentationPDF() {
     if (pageNumber > 1) {
       currentPage.drawText('AI-Based Bulk Answer Sheet Evaluation System', {
         x: MARGIN_LEFT,
-        y: PAGE_HEIGHT - 26,
-        size: 8,
+        y: PAGE_HEIGHT - 30,
+        size: 8.5,
         font: fontBold,
         color: primaryColor,
       });
-      currentPage.drawText('Technical & Functional Specification Report', {
-        x: PAGE_WIDTH - MARGIN_RIGHT - 165,
-        y: PAGE_HEIGHT - 26,
-        size: 8,
+      currentPage.drawText('Technical & Functional Specification', {
+        x: PAGE_WIDTH - MARGIN_RIGHT - 145,
+        y: PAGE_HEIGHT - 30,
+        size: 8.5,
         font: fontRegular,
         color: secondaryColor,
       });
       currentPage.drawLine({
-        start: { x: MARGIN_LEFT, y: PAGE_HEIGHT - 31 },
-        end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: PAGE_HEIGHT - 31 },
+        start: { x: MARGIN_LEFT, y: PAGE_HEIGHT - 36 },
+        end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: PAGE_HEIGHT - 36 },
         thickness: 0.5,
         color: borderColor,
       });
-      cursorY = PAGE_HEIGHT - MARGIN_TOP - 6;
+      cursorY = PAGE_HEIGHT - MARGIN_TOP - 10;
     }
     return currentPage;
   }
 
   function ensureSpace(neededHeight) {
-    if (!currentPage || cursorY - neededHeight < MARGIN_BOTTOM + 15) {
+    if (!currentPage || cursorY - neededHeight < MARGIN_BOTTOM + 20) {
       addPage();
     }
   }
 
   function drawHeading1(text) {
-    ensureSpace(34);
-    cursorY -= 8;
+    ensureSpace(42);
+    cursorY -= 14;
     currentPage.drawRectangle({
       x: MARGIN_LEFT,
-      y: cursorY - 2,
+      y: cursorY - 3,
       width: 3.5,
-      height: 14,
+      height: 16,
       color: primaryColor,
     });
     currentPage.drawText(text, {
-      x: MARGIN_LEFT + 8,
+      x: MARGIN_LEFT + 10,
       y: cursorY,
-      size: 11.5,
+      size: 13,
       font: fontBold,
       color: primaryColor,
     });
-    cursorY -= 15;
+    cursorY -= 20;
   }
 
   function drawHeading2(text) {
-    ensureSpace(24);
-    cursorY -= 4;
+    ensureSpace(30);
+    cursorY -= 8;
     currentPage.drawText(text, {
       x: MARGIN_LEFT,
       y: cursorY,
-      size: 9.5,
+      size: 10.5,
       font: fontBold,
       color: primaryColor,
     });
-    cursorY -= 13;
+    cursorY -= 16;
   }
 
   function drawParagraph(text, options = {}) {
-    const size = options.size || 8.8;
+    const size = options.size || 9.5;
     const font = options.font || fontRegular;
     const color = options.color || textColor;
     const indent = options.indent || 0;
     const maxWidth = options.maxWidth || (CONTENT_WIDTH - indent);
-    const lineHeight = options.lineHeight || 12.2;
+    const lineHeight = options.lineHeight || 14;
 
     const words = text.split(' ');
     let currentLine = '';
@@ -144,15 +144,15 @@ async function createDocumentationPDF() {
       });
       cursorY -= lineHeight;
     }
-    cursorY -= 2;
+    cursorY -= 4;
   }
 
   function drawBullet(title, text) {
-    ensureSpace(16);
+    ensureSpace(22);
     currentPage.drawCircle({
-      x: MARGIN_LEFT + 5,
-      y: cursorY + 3,
-      size: 1.8,
+      x: MARGIN_LEFT + 6,
+      y: cursorY + 3.5,
+      size: 2,
       color: accentColor,
     });
     
@@ -161,16 +161,16 @@ async function createDocumentationPDF() {
     
     const words = fullText.split(' ');
     let currentLine = '';
-    const size = 8.8;
-    const lineHeight = 12.2;
+    const size = 9.2;
+    const lineHeight = 13.5;
 
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
       const width = fontRegular.widthOfTextAtSize(testLine, size);
-      if (width > (CONTENT_WIDTH - 15) && currentLine) {
+      if (width > (CONTENT_WIDTH - 18) && currentLine) {
         ensureSpace(lineHeight);
         currentPage.drawText(currentLine, {
-          x: MARGIN_LEFT + 14,
+          x: MARGIN_LEFT + 16,
           y: cursorY,
           size,
           font: fontRegular,
@@ -185,7 +185,7 @@ async function createDocumentationPDF() {
     if (currentLine) {
       ensureSpace(lineHeight);
       currentPage.drawText(currentLine, {
-        x: MARGIN_LEFT + 14,
+        x: MARGIN_LEFT + 16,
         y: cursorY,
         size,
         font: fontRegular,
@@ -193,11 +193,12 @@ async function createDocumentationPDF() {
       });
       cursorY -= lineHeight;
     }
-    cursorY -= 1.5;
+    cursorY -= 3;
   }
 
   function drawCallout(title, linesArray) {
-    const size = 8.5;
+    const size = 9;
+    const lineHeight = 13;
     const formattedLines = [];
 
     linesArray.forEach(rawText => {
@@ -205,7 +206,7 @@ async function createDocumentationPDF() {
       let cur = '';
       for (const w of words) {
         const test = cur ? `${cur} ${w}` : w;
-        if (fontRegular.widthOfTextAtSize(test, size) > CONTENT_WIDTH - 20 && cur) {
+        if (fontRegular.widthOfTextAtSize(test, size) > CONTENT_WIDTH - 24 && cur) {
           formattedLines.push(cur);
           cur = w;
         } else {
@@ -215,73 +216,110 @@ async function createDocumentationPDF() {
       if (cur) formattedLines.push(cur);
     });
 
-    const boxHeight = 14 + (formattedLines.length * 11.2);
-    ensureSpace(boxHeight + 6);
+    const boxHeight = 20 + (formattedLines.length * lineHeight);
+    ensureSpace(boxHeight + 10);
 
     currentPage.drawRectangle({
       x: MARGIN_LEFT,
-      y: cursorY - boxHeight + 6,
+      y: cursorY - boxHeight + 8,
       width: CONTENT_WIDTH,
       height: boxHeight,
       color: lightBg,
       borderColor: borderColor,
-      borderWidth: 0.6,
+      borderWidth: 0.8,
     });
 
     currentPage.drawLine({
-      start: { x: MARGIN_LEFT, y: cursorY + 6 },
-      end: { x: MARGIN_LEFT, y: cursorY - boxHeight + 6 },
-      thickness: 3,
+      start: { x: MARGIN_LEFT, y: cursorY + 8 },
+      end: { x: MARGIN_LEFT, y: cursorY - boxHeight + 8 },
+      thickness: 3.5,
       color: primaryColor,
     });
 
     let boxY = cursorY - 2;
     if (title) {
       currentPage.drawText(title, {
-        x: MARGIN_LEFT + 10,
+        x: MARGIN_LEFT + 12,
         y: boxY,
-        size: 9,
+        size: 9.5,
         font: fontBold,
         color: primaryColor,
       });
-      boxY -= 11.5;
+      boxY -= 13;
     }
 
     for (const line of formattedLines) {
       currentPage.drawText(line, {
-        x: MARGIN_LEFT + 10,
+        x: MARGIN_LEFT + 12,
         y: boxY,
-        size: 8.5,
+        size,
         font: fontRegular,
         color: textColor,
       });
-      boxY -= 11;
+      boxY -= lineHeight;
     }
 
-    cursorY = cursorY - boxHeight - 3;
+    cursorY = cursorY - boxHeight - 6;
+  }
+
+  // Text-wrapping table cell helper
+  function wrapCellText(text, maxWidth, size = 8.5) {
+    const words = String(text).split(' ');
+    const lines = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const test = currentLine ? `${currentLine} ${word}` : word;
+      const width = fontRegular.widthOfTextAtSize(test, size);
+      if (width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = test;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines.length ? lines : [''];
   }
 
   function drawTable(headers, rows, colWidths) {
-    const rowHeight = 16;
-    const headerHeight = 18;
-    const totalHeight = headerHeight + (rows.length * rowHeight);
-    ensureSpace(totalHeight + 6);
+    const fontSize = 8.5;
+    const cellLineHeight = 11.5;
+    const cellPaddingX = 8;
+    const cellPaddingY = 6;
+    const headerHeight = 22;
 
-    // Header
+    // Calculate dynamic row heights based on wrapped text content
+    const rowCalculations = rows.map(row => {
+      let maxLinesInRow = 1;
+      const wrappedCells = row.map((cell, colIdx) => {
+        const availableWidth = colWidths[colIdx] - (cellPaddingX * 2);
+        const lines = wrapCellText(cell, availableWidth, fontSize);
+        if (lines.length > maxLinesInRow) maxLinesInRow = lines.length;
+        return lines;
+      });
+      const dynamicRowHeight = Math.max(22, (maxLinesInRow * cellLineHeight) + (cellPaddingY * 2));
+      return { dynamicRowHeight, wrappedCells };
+    });
+
+    const totalTableHeight = headerHeight + rowCalculations.reduce((sum, r) => sum + r.dynamicRowHeight, 0);
+    ensureSpace(Math.min(totalTableHeight, 180));
+
+    // Draw Header
     currentPage.drawRectangle({
       x: MARGIN_LEFT,
-      y: cursorY - headerHeight + 8,
+      y: cursorY - headerHeight + 10,
       width: CONTENT_WIDTH,
       height: headerHeight,
-      color: tableHeaderBg,
+      color: headerBg,
     });
 
     let currentX = MARGIN_LEFT;
     headers.forEach((header, idx) => {
       currentPage.drawText(header, {
-        x: currentX + 5,
+        x: currentX + cellPaddingX,
         y: cursorY - 2,
-        size: 8,
+        size: 8.5,
         font: fontBold,
         color: rgb(1, 1, 1),
       });
@@ -290,152 +328,163 @@ async function createDocumentationPDF() {
 
     cursorY -= headerHeight;
 
-    // Rows
-    rows.forEach((row, rowIdx) => {
+    // Draw Rows with proper wrapped heights
+    rowCalculations.forEach((calc, rowIdx) => {
+      ensureSpace(calc.dynamicRowHeight + 5);
+
       const isEven = rowIdx % 2 === 0;
       currentPage.drawRectangle({
         x: MARGIN_LEFT,
-        y: cursorY - rowHeight + 8,
+        y: cursorY - calc.dynamicRowHeight + 10,
         width: CONTENT_WIDTH,
-        height: rowHeight,
+        height: calc.dynamicRowHeight,
         color: isEven ? rgb(1, 1, 1) : lightBg,
         borderColor,
-        borderWidth: 0.4,
+        borderWidth: 0.5,
       });
 
       let colX = MARGIN_LEFT;
-      row.forEach((cell, cellIdx) => {
-        currentPage.drawText(String(cell), {
-          x: colX + 5,
-          y: cursorY - 1.5,
-          size: 7.8,
-          font: fontRegular,
-          color: textColor,
+      calc.wrappedCells.forEach((lines, colIdx) => {
+        let textY = cursorY - 1;
+        lines.forEach(line => {
+          currentPage.drawText(line, {
+            x: colX + cellPaddingX,
+            y: textY,
+            size: fontSize,
+            font: fontRegular,
+            color: textColor,
+          });
+          textY -= cellLineHeight;
         });
-        colX += colWidths[cellIdx];
+        colX += colWidths[colIdx];
       });
 
-      cursorY -= rowHeight;
+      cursorY -= calc.dynamicRowHeight;
     });
 
-    cursorY -= 6;
+    cursorY -= 10;
   }
 
   // ==========================================
-  // INITIALIZE FLUID GENERATION
+  // PAGE 1: TITLE & EXECUTIVE SUMMARY
   // ==========================================
   addPage();
 
-  // Top Title Banner
+  // Top Header Banner
   currentPage.drawRectangle({
     x: 0,
-    y: PAGE_HEIGHT - 90,
+    y: PAGE_HEIGHT - 110,
     width: PAGE_WIDTH,
-    height: 90,
+    height: 110,
     color: primaryColor,
   });
 
-  currentPage.drawText('ENGINEERING & FUNCTIONAL SPECIFICATION REPORT', {
+  currentPage.drawText('TECHNICAL & FUNCTIONAL DOCUMENTATION', {
     x: MARGIN_LEFT,
-    y: PAGE_HEIGHT - 35,
-    size: 8.5,
+    y: PAGE_HEIGHT - 45,
+    size: 9.5,
     font: fontBold,
     color: rgb(0.75, 0.85, 1),
   });
 
   currentPage.drawText('AI-Based Bulk Answer Sheet Evaluation System', {
     x: MARGIN_LEFT,
-    y: PAGE_HEIGHT - 55,
-    size: 16,
+    y: PAGE_HEIGHT - 70,
+    size: 18,
     font: fontBold,
     color: rgb(1, 1, 1),
   });
 
-  currentPage.drawText('Autonomous Ingestion, Optical Layout Parsing & IB Assessment Standardization', {
+  currentPage.drawText('Automated Ingestion, OCR Layout Parsing & IB Criterion-Based Grading', {
     x: MARGIN_LEFT,
-    y: PAGE_HEIGHT - 72,
-    size: 9,
+    y: PAGE_HEIGHT - 90,
+    size: 9.5,
     font: fontRegular,
     color: rgb(0.9, 0.93, 1),
   });
 
-  cursorY = PAGE_HEIGHT - 110;
+  cursorY = PAGE_HEIGHT - 135;
 
-  drawCallout('System Overview', [
-    'Scope: High-throughput automated grading for academic institutions and examination bodies.',
-    'Pedagogical Basis: International Baccalaureate (IB) 0-7 Mark Band Rubrics & Criterion-Based Assessment.',
-    'Core Pipeline: Client Ingestion -> PaddleOCR-VL Layout Parsing -> LLM Reasoning & Scoring -> Real-Time Matrix.',
-    'Outputs: Interactive Moderation Cockpit, Audit Logs, Inline Score Overrides, and Formatted Excel/CSV Reports.'
+  drawCallout('Executive Overview', [
+    'System: End-to-End Automated Answer Sheet Evaluation Platform',
+    'Standard: International Baccalaureate (IB) 0-7 Mark Band Rubric Compliance',
+    'Engine Pipeline: Next.js 14 App Router -> PaddleOCR-VL Core -> LLM Reasoning',
+    'Capabilities: Bulk Ingestion, Auto-Segmentation, Live Moderation, Excel/CSV Export'
   ]);
 
-  drawHeading1('1. Executive Summary & Problem Context');
+  drawHeading1('1. Problem Statement & Solution Overview');
   drawParagraph(
-    'Evaluating academic examinations in bulk poses chronic logistical and quality challenges for educational organizations. ' +
-    'Manual evaluation across hundreds or thousands of handwritten student scripts suffers from grader fatigue, inter-rater inconsistency, ' +
-    'prolonged grading turnaround times, and significant administrative overhead. Furthermore, disparate handwriting styles, multi-part questions, ' +
-    'and complex formatting render traditional template-bound OMR scanners ineffective for open-ended subjective assessments.'
+    'Evaluating academic examination scripts in bulk presents severe logistical bottlenecks, grader fatigue, and scoring variances. ' +
+    'Manual evaluation of handwritten answers across large student cohorts leads to subjective grading and prolonged grading turnaround. ' +
+    'Traditional template-based OMR scanners cannot process subjective, open-ended handwritten responses.'
   );
   drawParagraph(
-    'The AI-Based Bulk Answer Sheet Evaluation System provides an end-to-end cloud-native solution designed specifically to address these bottlenecks. ' +
-    'By integrating multimodal document parsing (PaddleOCR-VL) with high-capacity reasoning models, the system autonomously isolates distinct question ' +
-    'blocks, evaluates student responses against strict International Baccalaureate (IB) criteria, generates granular question-level feedback, and presents ' +
-    'an interactive cockpit for teacher moderation and administrative grade export.'
+    'This platform implements a cloud-native automated evaluation workflow that accepts student PDF answer sheets in bulk, ' +
+    'extracts handwritten and printed text using advanced multimodal OCR (PaddleOCR-VL), identifies question boundaries automatically, ' +
+    'and scores student responses using standardized International Baccalaureate (IB) criterion mark bands with full evaluator moderation.'
   );
 
-  drawHeading1('2. Architectural Pipeline & Data Engineering');
+  drawHeading2('Core Functional Capabilities');
+  drawBullet('Bulk Document Ingestion', 'Batch upload of PDF answer sheets with automatic Student ID extraction from filenames.');
+  drawBullet('Mixed-Script Layout OCR', 'High-accuracy parsing of printed question headers and student handwriting.');
+  drawBullet('Autonomous Question Segmentation', 'Segments individual question answers (Q1..Qn) without requiring rigid pre-printed templates.');
+  drawBullet('IB Assessment Alignment', 'Scores each question on the standardized 0-7 mark band with constructive feedback.');
+  drawBullet('Teacher Moderation Cockpit', 'Interactive full-width matrix permitting live score adjustments and Excel/CSV grade exports.');
+
+  // ==========================================
+  // PAGE 2: ARCHITECTURAL PIPELINE & SCORING
+  // ==========================================
+  addPage();
+
+  drawHeading1('2. System Architecture & Processing Pipeline');
   drawParagraph(
-    'To handle heterogeneous multi-page PDFs reliably without incurring cloud serverless gateway timeouts, the platform implements a decoupled, ' +
-    'three-phase asynchronous processing pipeline:'
+    'To guarantee high availability and eliminate cloud serverless execution timeouts, the system utilizes a decoupled asynchronous processing architecture:'
   );
 
-  drawBullet('Phase 1 - Ingestion & Job Creation', 'PDF files are received via multipart stream. The server forwards the raw binary to the PaddleOCR-VL processing queue, registering an asynchronous job and returning an immediate Job ID to the client within 1-2 seconds.');
-  drawBullet('Phase 2 - Asynchronous OCR & Layout Reconstruction', 'A client-coordinated background worker polls the OCR status endpoint at 3-second intervals. Upon completion, the service downloads the resulting JSONL layout parsing stream, extracting markdown transcripts, layout tables, and handwriting segments.');
-  drawBullet('Phase 3 - Rubric Evaluation & Question Segmentation', 'Extracted OCR text is dispatched to an advanced reasoning engine with strict JSON schema constraints. The model identifies question boundaries (Q1..Qn), calculates criteria-based scores on a 0-7 scale, and returns structured critique.');
+  drawCallout('Decoupled 3-Stage Pipeline', [
+    'Stage 1 (Ingestion): Client uploads PDF -> API queues task in PaddleOCR-VL -> Returns Job Token.',
+    'Stage 2 (Transcription): Client polls /api/ocr/poll every 3s -> Downloads and merges parsed JSONL markdown.',
+    'Stage 3 (Scoring): OCR text is sent to the reasoning engine -> Returns structured question marks and rationale.'
+  ]);
 
-  drawHeading2('Component Technology Stack');
+  drawHeading2('Technology Stack Matrix');
   drawTable(
-    ['Layer', 'Technology', 'Role / Justification'],
+    ['Layer', 'Technology', 'Role / Functional Rationale'],
     [
-      ['Frontend & API', 'Next.js 14 (App Router)', 'Full-stack React framework providing edge routing and responsive cockpit UI.'],
-      ['Type Safety', 'TypeScript 5', 'Rigorous typing for evaluation schemas, student models, and API payloads.'],
-      ['OCR Parsing', 'PaddleOCR-VL-1.6', 'Baidu AI Studio multimodal engine specialized in mixed print/handwriting extraction.'],
-      ['Reasoning LLM', 'High-Capacity Reasoning Engine', 'Contextual answer grading, question isolation, and structured JSON output.'],
-      ['Report Generation', 'SheetJS (xlsx)', 'Client-side generation of administrative grade books (.xlsx) and raw CSV exports.'],
+      ['Frontend Framework', 'Next.js 14 (App Router)', 'Full-stack responsive UI, edge routing, serverless API routes.'],
+      ['Type System', 'TypeScript 5', 'Rigorous typing for exam data, question models, and API schemas.'],
+      ['OCR Parsing Core', 'PaddleOCR-VL-1.6', 'Specialized extraction of handwritten scripts and printed exam prompts.'],
+      ['Reasoning LLM', 'High-Capacity Reasoning Core', 'Contextual evaluation, question isolation, and structured scoring.'],
+      ['Report Generation', 'SheetJS (xlsx)', 'Client-side generation of administrative grade workbooks (.xlsx) and CSVs.'],
     ],
-    [105, 135, 265]
+    [120, 140, 239]
   );
 
-  drawHeading1('3. OCR & Optical Layout Analysis Deep-Dive');
+  drawHeading1('3. International Baccalaureate (IB) Assessment Rubric');
   drawParagraph(
-    'Answer sheets vary widely in handwriting legibility, page orientation, margin density, and answer structure. The platform leverages ' +
-    'PaddleOCR-VL-1.6 to solve optical parsing challenges through dedicated algorithmic stages:'
-  );
-  drawBullet('Document Layout Detection', 'Distinguishes between printed exam prompts, student handwritten answers, mathematical notations, and margin noise.');
-  drawBullet('Handwritten Text Recognition (HTR)', 'High-accuracy character transcription resilient to varying cursive styles, pen thicknesses, and slight image skew.');
-  drawBullet('Sequential Content Structuring', 'Reconstructs natural reading order across multi-page scripts into a unified markdown transcript stream.');
-
-  drawHeading1('4. International Baccalaureate (IB) Scoring Rubric');
-  drawParagraph(
-    'Grading fidelity is maintained by enforcing standardized International Baccalaureate (IB) criterion bands. Each detected question receives ' +
-    'an objective mark between 0 and 7 according to the following formal assessment criteria:'
+    'Each identified response is evaluated against formal International Baccalaureate (IB) assessment principles on a 0-7 integer scale:'
   );
 
   drawTable(
-    ['Band', 'Classification', 'Assessment Criteria & Competency Descriptor'],
+    ['Mark Band', 'Descriptor Level', 'Academic Competency & Criteria Descriptor'],
     [
-      ['7', 'Excellent', 'Comprehensive conceptual mastery. Arguments are nuanced, logically structured, and thoroughly accurate.'],
-      ['5 - 6', 'Good', 'Sound understanding of key principles. Clear reasoning with minor inaccuracies or slight omissions.'],
-      ['3 - 4', 'Satisfactory', 'Basic conceptual grasp. Responses are partially developed but exhibit noticeable factual or analytical gaps.'],
-      ['1 - 2', 'Needs Improvement', 'Very limited comprehension. Superficial treatment, substantial inaccuracies, and weak reasoning.'],
+      ['7', 'Excellent', 'Comprehensive conceptual mastery. Nuanced analysis, logical structure, and thorough accuracy.'],
+      ['5 - 6', 'Good', 'Sound conceptual understanding. Clear reasoning with minor inaccuracies or slight omissions.'],
+      ['3 - 4', 'Satisfactory', 'Basic understanding. Responses are partially developed with noticeable factual or analytical gaps.'],
+      ['1 - 2', 'Needs Improvement', 'Very limited grasp. Superficial treatment, substantial inaccuracies, and weak reasoning.'],
       ['0', 'No Credit', 'Blank submission, completely irrelevant content, or response failing to address the question.'],
     ],
-    [45, 105, 355]
+    [65, 110, 324]
   );
 
-  drawHeading1('5. Evaluator Moderation Cockpit & Workflow');
+  // ==========================================
+  // PAGE 3: EVALUATOR WORKFLOW & VERIFICATION
+  // ==========================================
+  addPage();
+
+  drawHeading1('4. Evaluator Moderation & Interface Design');
   drawParagraph(
-    'A central design pillar is "Human-in-the-Loop" verification. The evaluation interface is constructed as a high-density, full-viewport dashboard ' +
-    'that equips teachers and examination moderators with comprehensive review tools:'
+    'The evaluation interface is engineered as an enterprise moderation cockpit that combines automated grading speed with complete human oversight:'
   );
 
   drawBullet('Live Dynamic Matrix Grid', 'Multi-column table displaying Student IDs, individual question score chips, total marks, percentage, and performance status.');
@@ -444,39 +493,27 @@ async function createDocumentationPDF() {
   drawBullet('Cohort Analytics Strip', 'Top-level KPIs calculate real-time Class Mean (%), Pass Rate (>=50%), and Distinction Rate (>=85%) across the current batch.');
   drawBullet('One-Click Grade Export', 'Generates institutional-grade Excel (.xlsx) workbooks and CSV files formatted for school information systems (SIS).');
 
-  drawHeading1('6. API Architecture & Endpoint Contracts');
+  drawHeading1('5. Benchmark Verification Dataset');
   drawParagraph(
-    'The system exposes modular REST route handlers designed for scalability and minimal overhead:'
-  );
-
-  drawBullet('POST /api/ocr/submit', 'Accepts multipart/form-data PDF file; queues asynchronous PaddleOCR-VL task; returns { jobId: string }.');
-  drawBullet('GET /api/ocr/poll?jobId={id}', 'Queries job progress; returns { state: "running" | "done", ocrText: string, totalPages, extractedPages }.');
-  drawBullet('POST /api/evaluate', 'Receives { studentId, ocrText }; invokes reasoning model with IB prompt schema; returns structured question array, totals, and band.');
-  drawBullet('GET /api/sample-pdfs', 'Provides pre-compiled benchmark answer sheets in Base64 for instant end-to-end demonstration.');
-
-  drawHeading1('7. Verification Dataset & Benchmark Results');
-  drawParagraph(
-    'The system includes a pre-packaged verification dataset consisting of three distinct student performance cohorts covering Biology, Physics, History, and Literature:'
+    'The system incorporates a pre-packaged benchmark dataset representing three distinct student achievement tiers across Biology, Physics, History, and Literature:'
   );
 
   drawTable(
     ['Student ID', 'Simulated Academic Profile', 'Expected Classification', 'Benchmark Output'],
     [
-      ['22104567.pdf', 'Structured, coherent explanations across all prompts.', 'Distinction / Excellent', '32 / 35 Marks (91%)'],
-      ['22104589.pdf', 'Brief, superficial answers with key factual gaps.', 'Satisfactory / Passing', '18 / 35 Marks (51%)'],
-      ['22104601.pdf', 'Exemplary conceptual rigor and nuanced analytical depth.', 'Top Distinction (Grade 7)', '34 / 35 Marks (97%)'],
+      ['22104567.pdf', 'Detailed, structured academic responses', 'Distinction / Excellent', '32 / 35 Marks (91%)'],
+      ['22104589.pdf', 'Brief, high-level summary answers', 'Satisfactory / Passing', '18 / 35 Marks (51%)'],
+      ['22104601.pdf', 'Exemplary mastery across all disciplines', 'Top Distinction (Grade 7)', '34 / 35 Marks (97%)'],
     ],
-    [85, 175, 130, 115]
+    [95, 160, 134, 110]
   );
 
-  drawHeading1('8. Security, Integrity & Future Evolution');
+  drawHeading1('6. Conclusion & Operational Roadmap');
   drawParagraph(
-    'The architecture incorporates data privacy by design: student documents are processed in memory and never permanently stored on external database clusters. ' +
-    'Future milestones on the product roadmap include:'
+    'The AI-Based Bulk Answer Sheet Evaluation System provides a robust foundation for modern automated educational assessment. ' +
+    'Future milestones on the technical roadmap include coordinate-accurate visual annotation overlays on original PDFs, ' +
+    'multi-evaluator blind grading reconciliation workflows, and direct LMS synchronization with Canvas, Blackboard, and Google Classroom.'
   );
-  drawBullet('Visual Annotation Overlays', 'Rendering coordinate-accurate bounding boxes directly onto student PDF pages highlighting evaluated passages.');
-  drawBullet('Multi-Moderator Blind Grading', 'Dual-evaluator scoring workflows with automatic variance flags triggering secondary senior examiner review.');
-  drawBullet('LMS Connectors', 'Native LTI integrations allowing direct grade synchronization with Canvas, Blackboard, Google Classroom, and Moodle.');
 
   // ==========================================
   // FOOTER & PAGE NUMBERING PASS
@@ -485,21 +522,21 @@ async function createDocumentationPDF() {
   pagesList.forEach((page, index) => {
     page.drawText(`Page ${index + 1} of ${totalPages}`, {
       x: PAGE_WIDTH - MARGIN_RIGHT - 55,
-      y: 22,
-      size: 7.8,
+      y: 24,
+      size: 8,
       font: fontRegular,
       color: secondaryColor,
     });
-    page.drawText('CONFIDENTIAL & PROPRIETARY — AI ANSWER SHEET EVALUATION SYSTEM', {
+    page.drawText('AI-BASED BULK ANSWER SHEET EVALUATION SYSTEM — TECHNICAL SPECIFICATION', {
       x: MARGIN_LEFT,
-      y: 22,
-      size: 7,
+      y: 24,
+      size: 7.2,
       font: fontRegular,
       color: secondaryColor,
     });
     page.drawLine({
-      start: { x: MARGIN_LEFT, y: 30 },
-      end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: 30 },
+      start: { x: MARGIN_LEFT, y: 32 },
+      end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: 32 },
       thickness: 0.5,
       color: borderColor,
     });
