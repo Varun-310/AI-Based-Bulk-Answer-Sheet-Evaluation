@@ -1,0 +1,76 @@
+.zone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg-card);
+}
+.zone:hover, .zoneDrag {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.zoneIcon {
+  color: var(--text-3);
+  margin-bottom: 14px;
+}
+.zone:hover .zoneIcon { color: var(--accent); }
+
+.zoneTitle {
+  font-size: 15px; font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.zoneSub {
+  font-size: 13px; color: var(--text-3);
+  margin-bottom: 18px;
+}
+
+.hidden { display: none; }
+
+/* File list */
+.list {
+  margin-top: 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.itemIcon { color: var(--text-3); flex-shrink: 0; }
+.itemInfo { flex: 1; min-width: 0; }
+.itemName { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.itemMeta { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+.itemError { color: var(--red); margin-left: 6px; }
+
+.itemStatus {
+  font-size: 12px; font-weight: 500;
+  display: flex; align-items: center; gap: 5px;
+  flex-shrink: 0;
+}
+.stQueued { color: var(--text-3); }
+.stActive { color: var(--accent); }
+.stDone { color: var(--green); }
+.stErr { color: var(--red); }
+
+.removeBtn {
+  background: none; border: none;
+  color: var(--text-3); cursor: pointer;
+  padding: 2px; border-radius: 4px;
+  transition: color var(--transition);
+  display: flex; align-items: center;
+}
+.removeBtn:hover { color: var(--red); }
+
+.actions {
+  display: flex; gap: 8px;
+  margin-top: 14px; justify-content: center;
+}
