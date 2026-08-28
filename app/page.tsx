@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Uploader from './components/Uploader';
 import Dashboard, { StudentResult } from './components/Dashboard';
+import styles from './page.module.css';
 
 const STORAGE_KEY = 'ib-answer-sheet-results';
 
@@ -49,61 +50,26 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%' }}>
+    <div className={styles.appWrapper}>
       {/* ── Top Navigation Header (100% Width) ── */}
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '10px 24px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--bg-subtle)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 28,
-              height: 28,
-              borderRadius: 6,
-              background: 'var(--accent)',
-              color: '#fff',
-            }}
-          >
+      <header className={styles.header}>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}>
             <FileCheck2 size={16} />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '-0.01em' }}>
+            <div className={styles.brandTitle}>
               AI Answer Sheet Evaluation Suite
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+            <div className={styles.brandSub}>
               Automated OCR Ingestion & IB Standards Scoring
             </div>
           </div>
         </div>
 
         {/* Engine Tags & Quick Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '3px 8px',
-              borderRadius: 6,
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              fontSize: 11,
-              color: 'var(--text-2)',
-            }}
-          >
+        <div className={styles.headerActions}>
+          <div className={styles.engineBadge}>
             <Cpu size={12} color="var(--accent-light)" />
             <span>PaddleOCR-VL + OpenRouter (Llama 3.3 70B)</span>
           </div>
@@ -122,29 +88,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Main Full-Screen Body Grid ── */}
-      <main
-        style={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: 'minmax(340px, 380px) 1fr',
-          gap: 16,
-          padding: '16px 20px',
-          maxWidth: '100vw',
-          width: '100%',
-        }}
-      >
+      {/* ── Main Responsive Body Grid ── */}
+      <main className={styles.mainGrid}>
         {/* Left Side: Upload & Queue Ingestion Panel */}
-        <section
-          className="panel"
-          style={{
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            height: 'fit-content',
-            minHeight: 'calc(100vh - 90px)',
-          }}
-        >
+        <section className={`panel ${styles.ingestionSection}`}>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
               Document Ingestion
@@ -162,14 +109,7 @@ export default function Home() {
         </section>
 
         {/* Right Side: Evaluation Matrix, Analytics & Inspector */}
-        <section
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            minWidth: 0,
-            minHeight: 'calc(100vh - 90px)',
-          }}
-        >
+        <section className={styles.dashboardSection}>
           <Dashboard
             results={results}
             onUpdateResults={setResults}
@@ -178,18 +118,7 @@ export default function Home() {
       </main>
 
       {/* ── Subtitle Footer ── */}
-      <footer
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '6px 24px',
-          borderTop: '1px solid var(--border)',
-          background: 'var(--bg-subtle)',
-          fontSize: 11,
-          color: 'var(--text-3)',
-        }}
-      >
+      <footer className={styles.footer}>
         <span>AI-Based Bulk Answer Sheet Evaluation Demo</span>
         <span>IB Mark Band Scale (0–7) · PaddleOCR-VL-1.6 · Google Gemini</span>
       </footer>

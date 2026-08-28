@@ -4,6 +4,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .ringSvg {
@@ -41,6 +42,7 @@
   justify-content: space-between;
   margin-bottom: 12px;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .chartTitle {
@@ -132,7 +134,7 @@
   align-items: flex-end;
   justify-content: space-around;
   padding-bottom: 24px;
-  gap: 8px;
+  gap: 6px;
 }
 
 .barCol {
@@ -255,7 +257,7 @@
   flex-direction: column;
   gap: 8px;
   flex: 1;
-  min-width: 140px;
+  min-width: 130px;
 }
 
 .legendItem {
@@ -306,6 +308,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
 
 .radarHeader {
@@ -315,6 +318,7 @@
   justify-content: space-between;
   margin-bottom: 6px;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .radarHeaderTitle {
@@ -346,6 +350,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
+}
+
+.radarSvgWrap svg {
+  max-width: 100%;
+  height: auto;
 }
 
 .radarTooltip {
@@ -370,6 +380,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
 }
 
 .miniBarList {
@@ -408,4 +419,28 @@
   height: 100%;
   border-radius: 3px;
   transition: width 0.4s ease;
+}
+
+/* ── Mobile Breakpoints ── */
+@media (max-width: 640px) {
+  .chartContainer {
+    padding: 12px 10px;
+  }
+
+  .donutRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .donutLegend {
+    width: 100%;
+  }
+
+  .barCol {
+    max-width: 38px;
+  }
+
+  .barLabel {
+    font-size: 10px;
+  }
 }

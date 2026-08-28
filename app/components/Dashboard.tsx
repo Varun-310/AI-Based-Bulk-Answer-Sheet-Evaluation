@@ -5,7 +5,7 @@ import {
   Users, TrendingUp, Award, ChevronDown, ChevronUp,
   Download, FileSpreadsheet, Search, Eye,
   Sparkles, Layers, CheckCircle2, AlertTriangle, Lightbulb,
-  BarChart3, LayoutGrid, Split, User, ArrowUpRight
+  BarChart3, LayoutGrid, Split, User
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import {
@@ -173,6 +173,162 @@ export default function Dashboard({ results, onUpdateResults }: Props) {
 
   const showAnalytics = viewMode === 'split' || viewMode === 'analytics';
   const showStudents = viewMode === 'split' || viewMode === 'students';
+
+  // Shared Dossier Renderer
+  const renderStudentDossier = (r: StudentResult) => {
+    const studentReview = generateStudentReview(r, analytics);
+    return (
+      <div className={styles.dossierContainer}>
+        {/* Student Header Bar */}
+        <div className={styles.dossierHeader}>
+          <div className={styles.dossierHeaderLeft}>
+            <RadialProgressRing
+              percentage={r.percentage}
+              size={54}
+              strokeWidth={5}
+              color={
+                r.percentage >= 70
+                  ? 'var(--green)'
+                  : r.percentage >= 50
+                  ? 'var(--amber)'
+                  : 'var(--red)'
+              }
+            />
+            <div>
+              <div className={styles.dossierTitle}>
+                Candidate Dossier: {r.studentId}
+              </div>
+              <div className={styles.dossierSub}>
+                IB Mark Band:{' '}
+                <span className={`badge ${badgeClass(r.status)}`}>
+                  {r.status}
+                </span>{' '}
+                · Total Marks:{' '}
+                <strong style={{ color: 'var(--text)' }}>
+                  {r.totalScore}/{r.maxTotal}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.dossierHeaderRight}>
+            <span className={styles.dossierHint}>
+              Scores recalculate live upon editing question marks below.
+            </span>
+          </div>
+        </div>
+
+        {/* Top Row: Student Review Card + Student Graph */}
+        <div className={styles.dossierTopGrid}>
+          {/* Student Diagnostic AI Review */}
+          <div className={styles.studentReviewBox}>
+            <div className={styles.studentReviewTitle}>
+              <Sparkles size={13} color="var(--accent-light)" />
+              <span>Candidate AI Assessment & Diagnostics</span>
+            </div>
+
+            <p className={styles.studentReviewSummary}>
+              {studentReview.summary}
+            </p>
+
+            <div className={styles.studentReviewPoints}>
+              <div className={styles.reviewPoint}>
+                <span className={styles.pointLabel} style={{ color: 'var(--green)' }}>
+                  Key Strengths:
+                </span>
+                <ul className={styles.pointList}>
+                  {studentReview.strengths.map((st, idx) => (
+                    <li key={idx}>{st}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className={styles.reviewPoint}>
+                <span className={styles.pointLabel} style={{ color: 'var(--amber)' }}>
+                  Areas for Growth:
+                </span>
+                <ul className={styles.pointList}>
+                  {studentReview.weaknesses.map((wk, idx) => (
+                    <li key={idx}>{wk}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className={styles.reviewPoint}>
+                <span className={styles.pointLabel} style={{ color: 'var(--accent-light)' }}>
+                  Examiner Recommendation:
+                </span>
+                <p className={styles.recommendationText}>
+                  {studentReview.recommendation}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Student Performance Competency Radar Graph */}
+          <div className={styles.studentGraphBox}>
+            <StudentRadarChart
+              questions={r.questions}
+              classStats={analytics}
+            />
+          </div>
+        </div>
+
+        {/* Bottom Row: Question Adjustments & PaddleOCR Text */}
+        <div className={styles.dossierBottomGrid}>
+          {/* Left: Question Breakdown & Mark Editor */}
+          <div className={styles.qList}>
+            <div className={styles.sectionSubTitle}>
+              Question-wise Feedback & Mark Adjustments
+            </div>
+            {r.questions.map((q, qi) => (
+              <div key={q.id} className={styles.qCard}>
+                <span className={styles.qId}>{q.id}</span>
+                <div className={styles.qCardBody}>
+                  <div className={styles.qFeedback}>{q.feedback}</div>
+                  {q.extractedAnswer && (
+                    <div className={styles.qAnswer}>
+                      Excerpt: &ldquo;{q.extractedAnswer}&rdquo;
+                    </div>
+                  )}
+                </div>
+                <div className={styles.scoreAdjustWrap}>
+                  <input
+                    type="number"
+                    className={styles.editInput}
+                    value={q.score}
+                    min={0}
+                    max={q.maxScore}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) =>
+                      editScore(
+                        r.studentId,
+                        qi,
+                        parseInt(e.target.value) || 0
+                      )
+                    }
+                    title={`Adjust score for ${q.id}`}
+                  />
+                  <span className={styles.maxScoreLbl}>/{q.maxScore}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Right: PaddleOCR Raw Text Stream */}
+          <div className={styles.ocrPreviewBox}>
+            <div className={styles.ocrPreviewTitle}>
+              <Eye size={12} />
+              <span>PaddleOCR Extracted Stream</span>
+            </div>
+            <div className={styles.ocrTextScroll}>
+              {r.ocrText || 'No raw text recorded.'}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.container}>
@@ -366,8 +522,8 @@ export default function Dashboard({ results, onUpdateResults }: Props) {
             </div>
           </div>
 
-          {/* Student Matrix Table & Expandable Dossiers */}
-          <div className={`card ${styles.tableCard}`}>
+          {/* 1. DESKTOP VIEW: Full Matrix Table (> 768px) */}
+          <div className={`card ${styles.tableCard} ${styles.desktopTable}`}>
             <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead>
@@ -395,8 +551,6 @@ export default function Dashboard({ results, onUpdateResults }: Props) {
                   ) : (
                     filtered.map((r) => {
                       const isExpanded = expandedId === r.studentId;
-                      const studentReview = generateStudentReview(r, analytics);
-
                       return (
                         <React.Fragment key={r.studentId}>
                           <tr
@@ -461,159 +615,11 @@ export default function Dashboard({ results, onUpdateResults }: Props) {
                             </td>
                           </tr>
 
-                          {/* ── EXPANDED DETAILED STUDENT DOSSIER ── */}
+                          {/* ── EXPANDED DETAILED STUDENT DOSSIER (DESKTOP) ── */}
                           {isExpanded && (
                             <tr className={styles.detailRow}>
                               <td colSpan={qCols.length + 5}>
-                                <div className={styles.dossierContainer}>
-                                  {/* Student Header Bar */}
-                                  <div className={styles.dossierHeader}>
-                                    <div className={styles.dossierHeaderLeft}>
-                                      <RadialProgressRing
-                                        percentage={r.percentage}
-                                        size={54}
-                                        strokeWidth={5}
-                                        color={
-                                          r.percentage >= 70
-                                            ? 'var(--green)'
-                                            : r.percentage >= 50
-                                            ? 'var(--amber)'
-                                            : 'var(--red)'
-                                        }
-                                      />
-                                      <div>
-                                        <div className={styles.dossierTitle}>
-                                          Candidate Dossier: {r.studentId}
-                                        </div>
-                                        <div className={styles.dossierSub}>
-                                          IB Mark Band:{' '}
-                                          <span className={`badge ${badgeClass(r.status)}`}>
-                                            {r.status}
-                                          </span>{' '}
-                                          · Total Marks:{' '}
-                                          <strong style={{ color: 'var(--text)' }}>
-                                            {r.totalScore}/{r.maxTotal}
-                                          </strong>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className={styles.dossierHeaderRight}>
-                                      <span className={styles.dossierHint}>
-                                        Scores recalculate live upon editing question marks below.
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Top Row: Student Review Card + Student Graph */}
-                                  <div className={styles.dossierTopGrid}>
-                                    {/* Student Diagnostic AI Review */}
-                                    <div className={styles.studentReviewBox}>
-                                      <div className={styles.studentReviewTitle}>
-                                        <Sparkles size={13} color="var(--accent-light)" />
-                                        <span>Candidate AI Assessment & Diagnostics</span>
-                                      </div>
-
-                                      <p className={styles.studentReviewSummary}>
-                                        {studentReview.summary}
-                                      </p>
-
-                                      <div className={styles.studentReviewPoints}>
-                                        <div className={styles.reviewPoint}>
-                                          <span className={styles.pointLabel} style={{ color: 'var(--green)' }}>
-                                            Key Strengths:
-                                          </span>
-                                          <ul className={styles.pointList}>
-                                            {studentReview.strengths.map((st, idx) => (
-                                              <li key={idx}>{st}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-
-                                        <div className={styles.reviewPoint}>
-                                          <span className={styles.pointLabel} style={{ color: 'var(--amber)' }}>
-                                            Areas for Growth:
-                                          </span>
-                                          <ul className={styles.pointList}>
-                                            {studentReview.weaknesses.map((wk, idx) => (
-                                              <li key={idx}>{wk}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-
-                                        <div className={styles.reviewPoint}>
-                                          <span className={styles.pointLabel} style={{ color: 'var(--accent-light)' }}>
-                                            Examiner Recommendation:
-                                          </span>
-                                          <p className={styles.recommendationText}>
-                                            {studentReview.recommendation}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Student Performance Competency Radar Graph */}
-                                    <div className={styles.studentGraphBox}>
-                                      <StudentRadarChart
-                                        questions={r.questions}
-                                        classStats={analytics}
-                                      />
-                                    </div>
-                                  </div>
-
-                                  {/* Bottom Row: Question Adjustments & PaddleOCR Text */}
-                                  <div className={styles.dossierBottomGrid}>
-                                    {/* Left: Question Breakdown & Mark Editor */}
-                                    <div className={styles.qList}>
-                                      <div className={styles.sectionSubTitle}>
-                                        Question-wise Feedback & Mark Adjustments
-                                      </div>
-                                      {r.questions.map((q, qi) => (
-                                        <div key={q.id} className={styles.qCard}>
-                                          <span className={styles.qId}>{q.id}</span>
-                                          <div className={styles.qCardBody}>
-                                            <div className={styles.qFeedback}>{q.feedback}</div>
-                                            {q.extractedAnswer && (
-                                              <div className={styles.qAnswer}>
-                                                Excerpt: &ldquo;{q.extractedAnswer}&rdquo;
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div className={styles.scoreAdjustWrap}>
-                                            <input
-                                              type="number"
-                                              className={styles.editInput}
-                                              value={q.score}
-                                              min={0}
-                                              max={q.maxScore}
-                                              onClick={(e) => e.stopPropagation()}
-                                              onChange={(e) =>
-                                                editScore(
-                                                  r.studentId,
-                                                  qi,
-                                                  parseInt(e.target.value) || 0
-                                                )
-                                              }
-                                              title={`Adjust score for ${q.id}`}
-                                            />
-                                            <span className={styles.maxScoreLbl}>/{q.maxScore}</span>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    {/* Right: PaddleOCR Raw Text Stream */}
-                                    <div className={styles.ocrPreviewBox}>
-                                      <div className={styles.ocrPreviewTitle}>
-                                        <Eye size={12} />
-                                        <span>PaddleOCR Extracted Stream</span>
-                                      </div>
-                                      <div className={styles.ocrTextScroll}>
-                                        {r.ocrText || 'No raw text recorded.'}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+                                {renderStudentDossier(r)}
                               </td>
                             </tr>
                           )}
@@ -624,6 +630,93 @@ export default function Dashboard({ results, onUpdateResults }: Props) {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* 2. MOBILE VIEW: 100% Screen-Fitted Mobile Cards (<= 768px) */}
+          <div className={styles.mobileCardsList}>
+            {filtered.length === 0 ? (
+              <div className={`card ${styles.mobileEmptyCard}`}>
+                No student records match the filter criteria.
+              </div>
+            ) : (
+              filtered.map((r) => {
+                const isExpanded = expandedId === r.studentId;
+                return (
+                  <div
+                    key={r.studentId}
+                    className={`card ${styles.mobileStudentCard} ${
+                      isExpanded ? styles.mobileCardExpanded : ''
+                    }`}
+                  >
+                    {/* Compact Mobile Card Row Header */}
+                    <div
+                      className={styles.mobileCardHeader}
+                      onClick={() => setExpandedId(isExpanded ? null : r.studentId)}
+                    >
+                      <div className={styles.mobileCardHeaderLeft}>
+                        <div className={styles.mobileSidRow}>
+                          <User size={13} color="var(--accent-light)" />
+                          <span className={styles.sid}>{r.studentId}</span>
+                          <span className={`badge ${badgeClass(r.status)}`}>{r.status}</span>
+                        </div>
+                        <div className={styles.mobileScoreRow}>
+                          <span className={styles.mobileTotalText}>
+                            Score: <strong>{r.totalScore}/{r.maxTotal}</strong>
+                          </span>
+                          <span
+                            className={styles.pct}
+                            style={{
+                              color:
+                                r.percentage >= 70
+                                  ? 'var(--green)'
+                                  : r.percentage >= 50
+                                  ? 'var(--amber)'
+                                  : 'var(--red)',
+                            }}
+                          >
+                            {r.percentage}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ padding: '4px 8px', fontSize: 11, gap: 4 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedId(isExpanded ? null : r.studentId);
+                        }}
+                      >
+                        <span>{isExpanded ? 'Close' : 'Review'}</span>
+                        {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                      </button>
+                    </div>
+
+                    {/* Quick Question Pills Strip */}
+                    {!isExpanded && (
+                      <div className={styles.mobileQuestionsStrip}>
+                        {r.questions.map((q) => (
+                          <div key={q.id} className={styles.mobileQPill}>
+                            <span className={styles.mobileQPillId}>{q.id}:</span>
+                            <span className={`score ${scoreClass(q.score, q.maxScore)}`} style={{ minWidth: 'auto', padding: '1px 4px', fontSize: 10 }}>
+                              {q.score}/{q.maxScore}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Expanded Mobile Dossier (Fits 100% Screen Width without table) */}
+                    {isExpanded && (
+                      <div className={styles.mobileDossierWrapper}>
+                        {renderStudentDossier(r)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}

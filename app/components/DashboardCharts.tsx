@@ -348,7 +348,11 @@ export function StudentRadarChart({
       </div>
 
       <div className={styles.radarSvgWrap}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <svg
+          viewBox={`0 0 ${size} ${size}`}
+          className={styles.radarSvg}
+          style={{ width: '100%', maxWidth: '210px', height: 'auto', display: 'block', margin: '0 auto' }}
+        >
           {/* Background Grid Rings */}
           {gridLevels.map((lvl) => {
             const pts = Array.from({ length: numSides })
