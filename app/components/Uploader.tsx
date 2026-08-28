@@ -3,7 +3,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import {
   Upload, FileText, CheckCircle2, XCircle, X,
-  Loader2, Play, Trash2, Sparkles,
+  Loader2, Play, Trash2,
 } from 'lucide-react';
 import styles from './Uploader.module.css';
 
@@ -26,7 +26,6 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export default function Uploader({ onProcessComplete, isProcessing, setIsProcessing }: Props) {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [dragOver, setDragOver] = useState(false);
-  const [loadingSamples, setLoadingSamples] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const update = useCallback((id: string, u: Partial<FileEntry>) => {
@@ -43,34 +42,6 @@ export default function Uploader({ onProcessComplete, isProcessing, setIsProcess
       }));
     setFiles((p) => [...p, ...entries]);
   }, []);
-
-  // Quick load 3 test PDFs
-  const loadTestSamples = useCallback(async () => {
-    try {
-      setLoadingSamples(true);
-      const res = await fetch('/api/sample-pdfs');
-      const data = await res.json();
-      if (data.files && Array.isArray(data.files)) {
-        const loadedFiles: File[] = [];
-        for (const item of data.files) {
-          const byteCharacters = atob(item.base64.split(',')[1]);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: 'application/pdf' });
-          const file = new File([blob], item.name, { type: 'application/pdf' });
-          loadedFiles.push(file);
-        }
-        add(loadedFiles);
-      }
-    } catch (e) {
-      console.error('Failed to load sample PDFs', e);
-    } finally {
-      setLoadingSamples(false);
-    }
-  }, [add]);
 
   const processOne = useCallback(
     async (entry: FileEntry): Promise<Record<string, unknown> | null> => {
@@ -198,21 +169,6 @@ export default function Uploader({ onProcessComplete, isProcessing, setIsProcess
           className={styles.hidden}
           onChange={(e) => { if (e.target.files) add(e.target.files); e.target.value = ''; }}
         />
-      </div>
-
-      {/* Quick Load Samples helper */}
-      <div className={styles.quickBar}>
-        <span style={{ color: 'var(--text-3)' }}>Demo Test Pack</span>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          style={{ padding: '4px 8px', fontSize: 11 }}
-          onClick={loadTestSamples}
-          disabled={isProcessing || loadingSamples}
-        >
-          {loadingSamples ? <Loader2 size={12} className="spinner" /> : <Sparkles size={12} />}
-          Load 3 Test PDFs
-        </button>
       </div>
 
       {/* File Queue List */}

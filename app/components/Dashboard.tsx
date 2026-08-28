@@ -4,28 +4,25 @@ import React, { useState, useCallback, useMemo } from 'react';
 import {
   Users, TrendingUp, Award, ChevronDown, ChevronUp,
   Download, FileSpreadsheet, Search, Eye,
-  Sparkles, Layers,
+  Sparkles, Layers, CheckCircle2, AlertTriangle, Lightbulb,
+  BarChart3, LayoutGrid, Split, User, ArrowUpRight
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import {
+  QuestionScore,
+  StudentResult,
+  calculateClassAnalytics,
+  generateStudentReview,
+} from '../lib/analytics';
+import {
+  ClassQuestionBarChart,
+  GradeDistributionDonut,
+  StudentRadarChart,
+  RadialProgressRing,
+} from './DashboardCharts';
 import styles from './Dashboard.module.css';
 
-interface QuestionScore {
-  id: string;
-  score: number;
-  maxScore: number;
-  feedback: string;
-  extractedAnswer: string;
-}
-
-export interface StudentResult {
-  studentId: string;
-  questions: QuestionScore[];
-  totalScore: number;
-  maxTotal: number;
-  percentage: number;
-  status: 'Excellent' | 'Good' | 'Satisfactory' | 'Needs Improvement' | 'Error';
-  ocrText: string;
-}
+export type { QuestionScore, StudentResult };
 
 function scoreClass(s: number, m: number) {
   const p = m > 0 ? (s / m) * 100 : 0;
@@ -47,32 +44,34 @@ function recalc(r: StudentResult): StudentResult {
   const maxTotal = r.questions.reduce((s, q) => s + q.maxScore, 0);
   const percentage = maxTotal > 0 ? Math.round((totalScore / maxTotal) * 100) : 0;
   const status: StudentResult['status'] =
-    percentage >= 85 ? 'Excellent' : percentage >= 70 ? 'Good' : percentage >= 55 ? 'Satisfactory' : 'Needs Improvement';
+    percentage >= 85
+      ? 'Excellent'
+      : percentage >= 70
+      ? 'Good'
+      : percentage >= 55
+      ? 'Satisfactory'
+      : 'Needs Improvement';
   return { ...r, totalScore, maxTotal, percentage, status };
 }
 
 interface Props {
   results: StudentResult[];
   onUpdateResults: (u: StudentResult[]) => void;
-  onLoadSamples?: () => void;
 }
 
-export default function Dashboard({ results, onUpdateResults, onLoadSamples }: Props) {
+export default function Dashboard({ results, onUpdateResults }: Props) {
+  const [viewMode, setViewMode] = useState<'split' | 'analytics' | 'students'>('split');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
+  // Compute analytics
+  const analytics = useMemo(() => calculateClassAnalytics(results), [results]);
+
   const maxQ = Math.max(...results.map((r) => r.questions.length), 0);
   const qCols = Array.from({ length: maxQ }, (_, i) => `Q${i + 1}`);
 
-  // Summary Metrics
-  const total = results.length;
-  const avg = total > 0 ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / total) : 0;
-  const passN = results.filter((r) => r.percentage >= 50).length;
-  const passRate = total > 0 ? Math.round((passN / total) * 100) : 0;
-  const excellentN = results.filter((r) => r.status === 'Excellent').length;
-
-  // Filtered List
+  // Filtered student list
   const filtered = useMemo(() => {
     return results.filter((r) => {
       const matchSearch = r.studentId.toLowerCase().includes(search.toLowerCase());
@@ -135,124 +134,83 @@ export default function Dashboard({ results, onUpdateResults, onLoadSamples }: P
   if (!results.length) {
     return (
       <div className={`panel ${styles.emptyGuide}`}>
-        <div style={{
-          display: 'inline-flex',
-          padding: 8,
-          borderRadius: 8,
-          background: 'var(--accent-dim)',
-          color: 'var(--accent-light)',
-          marginBottom: 12
-        }}>
-          <Layers size={24} />
+        <div className={styles.emptyIconWrap}>
+          <Layers size={22} />
         </div>
-        <h2 style={{ fontSize: 16, fontWeight: 600 }}>Evaluation Matrix & Analytics</h2>
-        <p style={{ color: 'var(--text-3)', fontSize: 12, maxWidth: 440, marginTop: 4 }}>
-          Upload student answer sheets to view the question-wise mark matrix, automated feedback, and IB grade distributions.
+        <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>
+          Evaluation Dashboard & Analytics
+        </h2>
+        <p style={{ color: 'var(--text-3)', fontSize: 12, maxWidth: 440, marginTop: 4, textAlign: 'center' }}>
+          Upload student answer sheet PDFs on the left to generate the complete cohort matrix, individual student reviews, and visual competency graphs.
         </p>
 
         <div className={styles.guideGrid}>
           <div className={styles.guideStep}>
-            <div className={styles.guideStepNum}>STEP 01</div>
+            <div className={styles.guideStepNum}>01 · Ingest</div>
             <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>Bulk Ingestion</div>
             <div style={{ color: 'var(--text-3)', fontSize: 11, marginTop: 2 }}>
-              Upload individual or multi-page student answer sheet PDFs.
+              Upload individual or batch student answer sheet PDFs.
             </div>
           </div>
           <div className={styles.guideStep}>
-            <div className={styles.guideStepNum}>STEP 02</div>
-            <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>PaddleOCR Extraction</div>
+            <div className={styles.guideStepNum}>02 · Extract</div>
+            <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>PaddleOCR-VL</div>
             <div style={{ color: 'var(--text-3)', fontSize: 11, marginTop: 2 }}>
-              Extracts both handwritten script and printed exam text.
+              High-accuracy layout analysis & handwritten handwriting conversion.
             </div>
           </div>
           <div className={styles.guideStep}>
-            <div className={styles.guideStepNum}>STEP 03</div>
-            <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>IB Standards Scoring</div>
+            <div className={styles.guideStepNum}>03 · Analyze</div>
+            <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>IB Standards & Graphs</div>
             <div style={{ color: 'var(--text-3)', fontSize: 11, marginTop: 2 }}>
-              Gemini breaks down answers (Q1–Qn) and assigns 0–7 mark bands.
+              Automated mark bands, student radars, and cohort reviews.
             </div>
           </div>
         </div>
-
-        {onLoadSamples && (
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ marginTop: 24, padding: '8px 16px', fontSize: 12 }}
-            onClick={onLoadSamples}
-          >
-            <Sparkles size={14} /> Load Sample Student Dataset
-          </button>
-        )}
       </div>
     );
   }
 
+  const showAnalytics = viewMode === 'split' || viewMode === 'analytics';
+  const showStudents = viewMode === 'split' || viewMode === 'students';
+
   return (
     <div className={styles.container}>
-      {/* Top Stats Strip */}
-      <div className={styles.statsRow}>
-        <div className={`card ${styles.statCard}`}>
-          <span className={styles.statLbl}>Evaluated</span>
-          <div className={styles.statVal} style={{ color: 'var(--accent-light)' }}>
-            <Users size={16} /> {total}
-          </div>
-        </div>
-        <div className={`card ${styles.statCard}`}>
-          <span className={styles.statLbl}>Class Average</span>
-          <div
-            className={styles.statVal}
-            style={{
-              color: avg >= 70 ? 'var(--green)' : avg >= 50 ? 'var(--amber)' : 'var(--red)',
-            }}
+      {/* ── Top Dashboard Toolbar (View Switcher & Global Actions) ── */}
+      <div className={styles.topToolbar}>
+        {/* Left: View Mode Segmented Controls */}
+        <div className={styles.viewModeGroup}>
+          <button
+            type="button"
+            className={`${styles.viewModeBtn} ${viewMode === 'split' ? styles.viewModeBtnActive : ''}`}
+            onClick={() => setViewMode('split')}
+            title="Show overall analytics and student matrix together"
           >
-            <TrendingUp size={16} /> {avg}%
-          </div>
-        </div>
-        <div className={`card ${styles.statCard}`}>
-          <span className={styles.statLbl}>Pass Rate (≥50%)</span>
-          <div className={styles.statVal} style={{ color: 'var(--green)' }}>
-            <Award size={16} /> {passRate}%
-          </div>
-        </div>
-        <div className={`card ${styles.statCard}`}>
-          <span className={styles.statLbl}>Distinction (≥85%)</span>
-          <div className={styles.statVal} style={{ color: 'var(--accent-light)' }}>
-            {excellentN} <span style={{ fontSize: 11, color: 'var(--text-3)' }}>({total > 0 ? Math.round((excellentN / total) * 100) : 0}%)</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Controls & Filter Bar */}
-      <div className={styles.controlsBar}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200, maxWidth: 360 }}>
-          <div style={{ position: 'relative', width: '100%' }}>
-            <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)' }} />
-            <input
-              type="text"
-              placeholder="Search Student ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input"
-              style={{ width: '100%', paddingLeft: 26, height: 30 }}
-            />
-          </div>
+            <Split size={13} />
+            <span>Split View</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.viewModeBtn} ${viewMode === 'analytics' ? styles.viewModeBtnActive : ''}`}
+            onClick={() => setViewMode('analytics')}
+            title="Focus on Class Overview, Graphs, and AI Synthesis"
+          >
+            <BarChart3 size={13} />
+            <span>Class Overview</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.viewModeBtn} ${viewMode === 'students' ? styles.viewModeBtnActive : ''}`}
+            onClick={() => setViewMode('students')}
+            title="Focus on Student Scorecards and Question Feedback"
+          >
+            <LayoutGrid size={13} />
+            <span>Student Matrix ({results.length})</span>
+          </button>
         </div>
 
-        <div className={styles.filterGroup}>
-          {['ALL', 'EXCELLENT', 'GOOD', 'SATISFACTORY', 'NEEDS IMPROVEMENT'].map((st) => (
-            <button
-              key={st}
-              type="button"
-              className={`${styles.filterBtn} ${statusFilter === st ? styles.filterBtnActive : ''}`}
-              onClick={() => setStatusFilter(st)}
-            >
-              {st === 'NEEDS IMPROVEMENT' ? 'NEEDS IMP.' : st}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 6 }}>
+        {/* Right: Export Controls */}
+        <div className={styles.exportGroup}>
           <button className="btn btn-ghost" onClick={exportCsv} title="Export CSV report">
             <Download size={13} /> CSV
           </button>
@@ -262,145 +220,413 @@ export default function Dashboard({ results, onUpdateResults, onLoadSamples }: P
         </div>
       </div>
 
-      {/* Main Results Table */}
-      <div className={`card ${styles.tableCard}`}>
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Student ID</th>
-                {qCols.map((q) => (
-                  <th key={q}>{q}</th>
-                ))}
-                <th>Total Marks</th>
-                <th>Percentage</th>
-                <th>IB Band</th>
-                <th style={{ width: 60, textAlign: 'center' }}>Review</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={qCols.length + 5} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-3)' }}>
-                    No student records match the filter criteria.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((r) => (
-                  <React.Fragment key={r.studentId}>
+      {/* ── SECTION A: CLASS OVERVIEW & OVERALL GRAPHS ── */}
+      {showAnalytics && analytics && (
+        <div className={styles.overviewSection}>
+          {/* Top KPI Cards Strip */}
+          <div className={styles.statsRow}>
+            <div className={`card ${styles.statCard}`}>
+              <span className={styles.statLbl}>Evaluated</span>
+              <div className={styles.statVal} style={{ color: 'var(--accent-light)' }}>
+                <Users size={15} /> {analytics.totalStudents}
+              </div>
+            </div>
+
+            <div className={`card ${styles.statCard}`}>
+              <span className={styles.statLbl}>Class Average</span>
+              <div
+                className={styles.statVal}
+                style={{
+                  color:
+                    analytics.classAverage >= 70
+                      ? 'var(--green)'
+                      : analytics.classAverage >= 50
+                      ? 'var(--amber)'
+                      : 'var(--red)',
+                }}
+              >
+                <TrendingUp size={15} /> {analytics.classAverage}%
+              </div>
+            </div>
+
+            <div className={`card ${styles.statCard}`}>
+              <span className={styles.statLbl}>Pass Rate (≥50%)</span>
+              <div className={styles.statVal} style={{ color: 'var(--green)' }}>
+                <Award size={15} /> {analytics.passRate}%
+              </div>
+            </div>
+
+            <div className={`card ${styles.statCard}`}>
+              <span className={styles.statLbl}>Distinction (≥85%)</span>
+              <div className={styles.statVal} style={{ color: 'var(--accent-light)' }}>
+                {analytics.distinctionRate}%{' '}
+                <span style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                  ({analytics.bandDistribution.find((b) => b.name === 'Excellent')?.count || 0})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Graphs Grid (Question Mastery Bar Chart + Band Distribution Donut) */}
+          <div className={styles.chartsGrid}>
+            <ClassQuestionBarChart
+              stats={analytics.questionStats}
+              classAverage={analytics.classAverage}
+            />
+            <GradeDistributionDonut
+              distribution={analytics.bandDistribution}
+              totalStudents={analytics.totalStudents}
+            />
+          </div>
+
+          {/* Class-Wide Overall AI Synthesis Review Card */}
+          <div className={`card ${styles.classReviewCard}`}>
+            <div className={styles.classReviewHeader}>
+              <div className={styles.reviewBadge}>
+                <Sparkles size={13} />
+                <span>Overall Class AI Review & Diagnostic</span>
+              </div>
+              <span className={styles.cohortMetaTag}>Cohort Synthesis</span>
+            </div>
+
+            <p className={styles.reviewSummaryText}>{analytics.overallReview.summary}</p>
+
+            <div className={styles.reviewColumns}>
+              {/* Strengths */}
+              <div className={styles.reviewColBox}>
+                <div className={styles.reviewColTitle} style={{ color: 'var(--green)' }}>
+                  <CheckCircle2 size={13} />
+                  <span>Key Class Strengths</span>
+                </div>
+                <ul className={styles.reviewList}>
+                  {analytics.overallReview.strengths.map((s, idx) => (
+                    <li key={idx}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Weaknesses / Focus Areas */}
+              <div className={styles.reviewColBox}>
+                <div className={styles.reviewColTitle} style={{ color: 'var(--amber)' }}>
+                  <AlertTriangle size={13} />
+                  <span>Common Misconceptions / Gaps</span>
+                </div>
+                <ul className={styles.reviewList}>
+                  {analytics.overallReview.weaknesses.map((w, idx) => (
+                    <li key={idx}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Recommendations */}
+              <div className={styles.reviewColBox}>
+                <div className={styles.reviewColTitle} style={{ color: 'var(--accent-light)' }}>
+                  <Lightbulb size={13} />
+                  <span>Teaching Recommendations</span>
+                </div>
+                <ul className={styles.reviewList}>
+                  {analytics.overallReview.recommendations.map((r, idx) => (
+                    <li key={idx}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION B: STUDENT EVALUATION MATRIX & DOSSIERS ── */}
+      {showStudents && (
+        <div className={styles.matrixSection}>
+          {/* Controls Bar (Search & IB Band Filter) */}
+          <div className={styles.controlsBar}>
+            <div className={styles.searchBox}>
+              <Search size={13} className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search Student ID..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="input"
+                style={{ width: '100%', paddingLeft: 28, height: 30 }}
+              />
+            </div>
+
+            <div className={styles.filterGroup}>
+              {['ALL', 'EXCELLENT', 'GOOD', 'SATISFACTORY', 'NEEDS IMPROVEMENT'].map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  className={`${styles.filterBtn} ${statusFilter === st ? styles.filterBtnActive : ''}`}
+                  onClick={() => setStatusFilter(st)}
+                >
+                  {st === 'NEEDS IMPROVEMENT' ? 'NEEDS IMP.' : st}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Student Matrix Table & Expandable Dossiers */}
+          <div className={`card ${styles.tableCard}`}>
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    {qCols.map((q) => (
+                      <th key={q}>{q}</th>
+                    ))}
+                    <th>Total Marks</th>
+                    <th>Percentage</th>
+                    <th>IB Band</th>
+                    <th style={{ width: 90, textAlign: 'center' }}>Student Report</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
                     <tr>
-                      <td className={styles.sid}>{r.studentId}</td>
-                      {qCols.map((_, i) => {
-                        const q = r.questions[i];
-                        return (
-                          <td key={i}>
-                            {q ? (
-                              <span className={`score ${scoreClass(q.score, q.maxScore)}`}>
-                                {q.score}/{q.maxScore}
-                              </span>
-                            ) : (
-                              <span style={{ color: 'var(--text-3)' }}>-</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td>
-                        <span className={`score ${scoreClass(r.totalScore, r.maxTotal)}`}>
-                          {r.totalScore}/{r.maxTotal}
-                        </span>
-                      </td>
                       <td
-                        className={styles.pct}
-                        style={{
-                          color:
-                            r.percentage >= 70
-                              ? 'var(--green)'
-                              : r.percentage >= 50
-                              ? 'var(--amber)'
-                              : 'var(--red)',
-                        }}
+                        colSpan={qCols.length + 5}
+                        style={{ textAlign: 'center', padding: '36px', color: 'var(--text-3)' }}
                       >
-                        {r.percentage}%
-                      </td>
-                      <td>
-                        <span className={`badge ${badgeClass(r.status)}`}>{r.status}</span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          style={{ padding: '2px 8px', fontSize: 11 }}
-                          onClick={() => setExpandedId(expandedId === r.studentId ? null : r.studentId)}
-                        >
-                          {expandedId === r.studentId ? (
-                            <ChevronUp size={12} />
-                          ) : (
-                            <ChevronDown size={12} />
-                          )}
-                        </button>
+                        No student records match the filter criteria.
                       </td>
                     </tr>
+                  ) : (
+                    filtered.map((r) => {
+                      const isExpanded = expandedId === r.studentId;
+                      const studentReview = generateStudentReview(r, analytics);
 
-                    {/* Detailed Inspector View */}
-                    {expandedId === r.studentId && (
-                      <tr className={styles.detailRow}>
-                        <td colSpan={qCols.length + 5}>
-                          <div className={styles.detailContent}>
-                            {/* Left: Question Breakdown & Scoring Override */}
-                            <div className={styles.qList}>
-                              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                Question-wise Feedback & Mark Adjustments
+                      return (
+                        <React.Fragment key={r.studentId}>
+                          <tr
+                            className={isExpanded ? styles.tableRowSelected : ''}
+                            onClick={() => setExpandedId(isExpanded ? null : r.studentId)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td className={styles.sid}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <User size={13} color="var(--accent-light)" />
+                                <span>{r.studentId}</span>
                               </div>
-                              {r.questions.map((q, qi) => (
-                                <div key={q.id} className={styles.qCard}>
-                                  <span className={styles.qId}>{q.id}</span>
-                                  <div>
-                                    <div className={styles.qFeedback}>{q.feedback}</div>
-                                    {q.extractedAnswer && (
-                                      <div className={styles.qAnswer}>
-                                        Excerpt: &ldquo;{q.extractedAnswer}&rdquo;
+                            </td>
+                            {qCols.map((_, i) => {
+                              const q = r.questions[i];
+                              return (
+                                <td key={i}>
+                                  {q ? (
+                                    <span className={`score ${scoreClass(q.score, q.maxScore)}`}>
+                                      {q.score}/{q.maxScore}
+                                    </span>
+                                  ) : (
+                                    <span style={{ color: 'var(--text-3)' }}>-</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td>
+                              <span className={`score ${scoreClass(r.totalScore, r.maxTotal)}`}>
+                                {r.totalScore}/{r.maxTotal}
+                              </span>
+                            </td>
+                            <td
+                              className={styles.pct}
+                              style={{
+                                color:
+                                  r.percentage >= 70
+                                    ? 'var(--green)'
+                                    : r.percentage >= 50
+                                    ? 'var(--amber)'
+                                    : 'var(--red)',
+                              }}
+                            >
+                              {r.percentage}%
+                            </td>
+                            <td>
+                              <span className={`badge ${badgeClass(r.status)}`}>{r.status}</span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className="btn btn-ghost"
+                                style={{ padding: '3px 8px', fontSize: 11, gap: 4 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedId(isExpanded ? null : r.studentId);
+                                }}
+                              >
+                                <span>{isExpanded ? 'Close' : 'Review'}</span>
+                                {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                              </button>
+                            </td>
+                          </tr>
+
+                          {/* ── EXPANDED DETAILED STUDENT DOSSIER ── */}
+                          {isExpanded && (
+                            <tr className={styles.detailRow}>
+                              <td colSpan={qCols.length + 5}>
+                                <div className={styles.dossierContainer}>
+                                  {/* Student Header Bar */}
+                                  <div className={styles.dossierHeader}>
+                                    <div className={styles.dossierHeaderLeft}>
+                                      <RadialProgressRing
+                                        percentage={r.percentage}
+                                        size={54}
+                                        strokeWidth={5}
+                                        color={
+                                          r.percentage >= 70
+                                            ? 'var(--green)'
+                                            : r.percentage >= 50
+                                            ? 'var(--amber)'
+                                            : 'var(--red)'
+                                        }
+                                      />
+                                      <div>
+                                        <div className={styles.dossierTitle}>
+                                          Candidate Dossier: {r.studentId}
+                                        </div>
+                                        <div className={styles.dossierSub}>
+                                          IB Mark Band:{' '}
+                                          <span className={`badge ${badgeClass(r.status)}`}>
+                                            {r.status}
+                                          </span>{' '}
+                                          · Total Marks:{' '}
+                                          <strong style={{ color: 'var(--text)' }}>
+                                            {r.totalScore}/{r.maxTotal}
+                                          </strong>
+                                        </div>
                                       </div>
-                                    )}
+                                    </div>
+
+                                    <div className={styles.dossierHeaderRight}>
+                                      <span className={styles.dossierHint}>
+                                        Scores recalculate live upon editing question marks below.
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <input
-                                      type="number"
-                                      className={styles.editInput}
-                                      value={q.score}
-                                      min={0}
-                                      max={q.maxScore}
-                                      onChange={(e) =>
-                                        editScore(r.studentId, qi, parseInt(e.target.value) || 0)
-                                      }
-                                      title={`Adjust score for ${q.id}`}
-                                    />
-                                    <span style={{ color: 'var(--text-3)', fontSize: 11 }}>/{q.maxScore}</span>
+
+                                  {/* Top Row: Student Review Card + Student Graph */}
+                                  <div className={styles.dossierTopGrid}>
+                                    {/* Student Diagnostic AI Review */}
+                                    <div className={styles.studentReviewBox}>
+                                      <div className={styles.studentReviewTitle}>
+                                        <Sparkles size={13} color="var(--accent-light)" />
+                                        <span>Candidate AI Assessment & Diagnostics</span>
+                                      </div>
+
+                                      <p className={styles.studentReviewSummary}>
+                                        {studentReview.summary}
+                                      </p>
+
+                                      <div className={styles.studentReviewPoints}>
+                                        <div className={styles.reviewPoint}>
+                                          <span className={styles.pointLabel} style={{ color: 'var(--green)' }}>
+                                            Key Strengths:
+                                          </span>
+                                          <ul className={styles.pointList}>
+                                            {studentReview.strengths.map((st, idx) => (
+                                              <li key={idx}>{st}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+
+                                        <div className={styles.reviewPoint}>
+                                          <span className={styles.pointLabel} style={{ color: 'var(--amber)' }}>
+                                            Areas for Growth:
+                                          </span>
+                                          <ul className={styles.pointList}>
+                                            {studentReview.weaknesses.map((wk, idx) => (
+                                              <li key={idx}>{wk}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+
+                                        <div className={styles.reviewPoint}>
+                                          <span className={styles.pointLabel} style={{ color: 'var(--accent-light)' }}>
+                                            Examiner Recommendation:
+                                          </span>
+                                          <p className={styles.recommendationText}>
+                                            {studentReview.recommendation}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Student Performance Competency Radar Graph */}
+                                    <div className={styles.studentGraphBox}>
+                                      <StudentRadarChart
+                                        questions={r.questions}
+                                        classStats={analytics}
+                                      />
+                                    </div>
+                                  </div>
+
+                                  {/* Bottom Row: Question Adjustments & PaddleOCR Text */}
+                                  <div className={styles.dossierBottomGrid}>
+                                    {/* Left: Question Breakdown & Mark Editor */}
+                                    <div className={styles.qList}>
+                                      <div className={styles.sectionSubTitle}>
+                                        Question-wise Feedback & Mark Adjustments
+                                      </div>
+                                      {r.questions.map((q, qi) => (
+                                        <div key={q.id} className={styles.qCard}>
+                                          <span className={styles.qId}>{q.id}</span>
+                                          <div className={styles.qCardBody}>
+                                            <div className={styles.qFeedback}>{q.feedback}</div>
+                                            {q.extractedAnswer && (
+                                              <div className={styles.qAnswer}>
+                                                Excerpt: &ldquo;{q.extractedAnswer}&rdquo;
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className={styles.scoreAdjustWrap}>
+                                            <input
+                                              type="number"
+                                              className={styles.editInput}
+                                              value={q.score}
+                                              min={0}
+                                              max={q.maxScore}
+                                              onClick={(e) => e.stopPropagation()}
+                                              onChange={(e) =>
+                                                editScore(
+                                                  r.studentId,
+                                                  qi,
+                                                  parseInt(e.target.value) || 0
+                                                )
+                                              }
+                                              title={`Adjust score for ${q.id}`}
+                                            />
+                                            <span className={styles.maxScoreLbl}>/{q.maxScore}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {/* Right: PaddleOCR Raw Text Stream */}
+                                    <div className={styles.ocrPreviewBox}>
+                                      <div className={styles.ocrPreviewTitle}>
+                                        <Eye size={12} />
+                                        <span>PaddleOCR Extracted Stream</span>
+                                      </div>
+                                      <div className={styles.ocrTextScroll}>
+                                        {r.ocrText || 'No raw text recorded.'}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-
-                            {/* Right: OCR Raw Text Preview */}
-                            <div className={styles.ocrPreviewBox}>
-                              <div className={styles.ocrPreviewTitle}>
-                                <Eye size={12} style={{ verticalAlign: -1, marginRight: 4 }} />
-                                PaddleOCR Extracted Text
-                              </div>
-                              <div className={styles.ocrTextScroll}>
-                                {r.ocrText || 'No raw text stream recorded.'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              )}
-            </tbody>
-          </table>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

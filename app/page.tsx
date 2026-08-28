@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  FileCheck2, Sparkles, Trash2, Cpu,
+  FileCheck2, Trash2, Cpu,
 } from 'lucide-react';
 import Uploader from './components/Uploader';
 import Dashboard, { StudentResult } from './components/Dashboard';

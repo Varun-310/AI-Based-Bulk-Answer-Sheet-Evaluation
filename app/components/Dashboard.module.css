@@ -2,10 +2,68 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 14px;
+  gap: 16px;
 }
 
-/* Stats Row */
+/* ── Top Dashboard Toolbar ── */
+.topToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+
+.viewModeGroup {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.viewModeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+.viewModeBtn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+.viewModeBtnActive {
+  background: var(--accent-dim) !important;
+  color: var(--accent-light) !important;
+  font-weight: 600;
+}
+
+.exportGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── SECTION A: CLASS OVERVIEW ── */
+.overviewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .statsRow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -16,26 +74,143 @@
   padding: 10px 14px;
   display: flex;
   flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .statVal {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   display: flex;
   align-items: center;
   gap: 6px;
+  margin-top: 2px;
 }
 
 .statLbl {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-3);
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
-/* Controls Bar */
+/* Charts Grid */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Class Overall Review Card */
+.classReviewCard {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.classReviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reviewBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-light);
+}
+
+.cohortMetaTag {
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.reviewSummaryText {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.reviewColumns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .reviewColumns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reviewColBox {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reviewColTitle {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.reviewList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+}
+
+.reviewList li {
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.4;
+  position: relative;
+  padding-left: 10px;
+}
+.reviewList li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--text-3);
+  font-weight: 700;
+}
+
+/* ── SECTION B: STUDENT MATRIX ── */
+.matrixSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .controlsBar {
   display: flex;
   align-items: center;
@@ -44,22 +219,40 @@
   flex-wrap: wrap;
 }
 
+.searchBox {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  pointer-events: none;
+}
+
 .filterGroup {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .filterBtn {
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text-2);
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition);
+  font-family: inherit;
 }
 .filterBtn:hover {
   background: var(--bg-card-hover);
@@ -74,18 +267,18 @@
 
 /* Table Area */
 .tableCard {
-  flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .tableWrap {
-  flex: 1;
   overflow-x: auto;
   overflow-y: auto;
-  max-height: calc(100vh - 240px);
+  max-height: calc(100vh - 200px);
 }
 
 .table {
@@ -95,7 +288,7 @@
 }
 
 .table th {
-  padding: 10px 12px;
+  padding: 9px 12px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
@@ -111,8 +304,8 @@
 }
 
 .table td {
-  padding: 9px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
 }
 
@@ -120,10 +313,16 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.tableRowSelected {
+  background: rgba(99, 102, 241, 0.06) !important;
+  border-left: 2px solid var(--accent);
+}
+
 .sid {
   font-weight: 600;
   color: var(--accent-light);
   font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
 }
 
 .pct {
@@ -131,23 +330,175 @@
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Expanded Detail Row */
+/* ── EXPANDED STUDENT DOSSIER ── */
 .detailRow td {
   padding: 0 !important;
-  background: rgba(0, 0, 0, 0.25) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
 }
 
-.detailContent {
-  padding: 14px 16px;
+.dossierContainer {
+  padding: 16px;
   border-bottom: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: fadeIn 0.2s ease-out;
 }
-@media (max-width: 1024px) {
-  .detailContent {
+
+.dossierHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dossierHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dossierTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.dossierSub {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dossierHeaderRight {
+  display: flex;
+  align-items: center;
+}
+
+.dossierHint {
+  font-size: 10px;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Dossier Top Grid: Review + Radar Graph */
+.dossierTopGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 1000px) {
+  .dossierTopGrid {
     grid-template-columns: 1fr;
   }
+}
+
+.studentReviewBox {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studentReviewTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.01em;
+}
+
+.studentReviewSummary {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.studentReviewPoints {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.reviewPoint {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pointLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pointList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pointList li {
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.35;
+  padding-left: 8px;
+  position: relative;
+}
+.pointList li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--text-3);
+}
+
+.recommendationText {
+  font-size: 11px;
+  color: var(--text-2);
+  line-height: 1.35;
+  font-style: italic;
+}
+
+.studentGraphBox {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dossier Bottom Grid: Questions + OCR */
+.dossierBottomGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 1000px) {
+  .dossierBottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sectionSubTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
 }
 
 .qList {
@@ -159,8 +510,8 @@
 .qCard {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 9px 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -172,19 +523,24 @@
   font-size: 11px;
   font-family: 'JetBrains Mono', monospace;
   color: var(--accent-light);
-  min-width: 26px;
+  min-width: 24px;
+}
+
+.qCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .qFeedback {
   font-size: 12px;
   color: var(--text);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 .qAnswer {
   font-size: 11px;
   color: var(--text-3);
-  margin-top: 4px;
   font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -193,40 +549,15 @@
   -webkit-box-orient: vertical;
 }
 
-.ocrPreviewBox {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
+.scoreAdjustWrap {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.ocrPreviewTitle {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.ocrTextScroll {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--text-2);
-  white-space: pre-wrap;
-  max-height: 220px;
-  overflow-y: auto;
-  line-height: 1.4;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 8px;
-  border-radius: 4px;
+  align-items: center;
+  gap: 4px;
 }
 
 .editInput {
-  width: 44px;
-  padding: 2px 4px;
+  width: 40px;
+  padding: 3px 4px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -239,22 +570,74 @@
   border-color: var(--accent);
 }
 
-/* Empty guide */
+.maxScoreLbl {
+  color: var(--text-3);
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ocrPreviewBox {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+}
+
+.ocrPreviewTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ocrTextScroll {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+  line-height: 1.4;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* ── Empty Guide ── */
 .emptyGuide {
-  padding: 36px 24px;
+  padding: 40px 24px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
+  min-height: 480px;
+}
+
+.emptyIconWrap {
+  display: inline-flex;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  margin-bottom: 12px;
 }
 
 .guideGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  max-width: 720px;
+  max-width: 680px;
   margin-top: 24px;
   text-align: left;
 }
@@ -272,9 +655,10 @@
 }
 
 .guideStepNum {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--accent-light);
   font-family: 'JetBrains Mono', monospace;
   margin-bottom: 4px;
+  text-transform: uppercase;
 }
